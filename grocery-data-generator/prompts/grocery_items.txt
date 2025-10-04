@@ -1,0 +1,39 @@
+Create realistic grocery store product data with the following requirements:
+
+Generate diverse items across all grocery categories:
+- Fresh Produce (fruits, vegetables, herbs)
+- Meat & Seafood (beef, pork, chicken, fish, shellfish)
+- Dairy & Eggs (milk, cheese, yogurt, eggs)
+- Pantry Staples (grains, pasta, canned goods, oils, spices)
+- Frozen Foods (vegetables, meals, desserts)
+- Beverages (water, juice, soda, coffee, tea, alcohol)
+- Snacks & Candy (chips, crackers, chocolate, nuts)
+- Health & Beauty (soap, shampoo, vitamins, medications)
+- Household Essentials (cleaning supplies, paper products)
+- Bakery (bread, pastries, cakes)
+- Deli (prepared foods, sliced meats, salads)
+- Organic & Natural (organic versions of standard items)
+
+For each item, include:
+- Realistic product names that sound like actual grocery products
+- Mix of name brands and store brands
+- Appropriate pricing for Las Vegas market (consider organic premiums)
+- Accurate unit sizes (12 oz can, 1 lb bag, 64 fl oz bottle, etc.)
+- Proper dietary classifications (organic, gluten-free, vegan, etc.)
+- Marketing-style descriptions that would appear on product packaging
+- Relevant tags for search and categorization
+
+Brand Guidelines:
+- Include real major brands where appropriate (Coca-Cola, Pepsi, etc.)
+- Create realistic store brand names (Great Value style)
+- Make organic brands sound premium (Whole Foods style)
+- Ensure brand names match product categories
+
+Pricing Guidelines:
+- Fresh produce: $0.50 - $8.00 per lb
+- Meat & seafood: $3.00 - $25.00 per lb
+- Packaged goods: $0.99 - $15.00
+- Organic premium: 20-50% higher than conventional
+- Specialty/gourmet items: can be higher
+
+Make all data feel authentic and varied, as if sourced from a real grocery chain's inventory system.
