@@ -37,7 +37,7 @@ export function GameRulesModal({ isOpen, onClose }: GameRulesModalProps) {
                   <Trophy className="h-6 w-6 text-white" />
                 </div>
                 <h2 className="text-2xl font-bold text-white">
-                  The Price is Bot Challenge
+                  Elasti-Cart Challenge
                 </h2>
               </div>
               <button
@@ -67,10 +67,20 @@ export function GameRulesModal({ isOpen, onClose }: GameRulesModalProps) {
                 <h3 className="text-xl font-semibold text-gray-900">Your Mission</h3>
               </div>
               <p className="text-gray-700 text-lg leading-relaxed">
-                Use your chosen AI shopping agent to build the perfect grocery cart. Get as close to 
+                Use your chosen AI shopping agent to fill exactly
+                <span className="font-bold text-vegas-red mx-1">5 bags</span>
+                with grocery items. Get as close to 
                 <span className="font-bold text-vegas-gold mx-1">$100</span> 
                 as possible without going over!
               </p>
+              <div className="mt-4 p-4 bg-white/50 rounded-lg border border-vegas-gold/30">
+                <h4 className="font-semibold text-gray-900 mb-2">🛒 The 5-Bag Rule:</h4>
+                <ul className="text-sm text-gray-700 space-y-1">
+                  <li>• Exactly <strong>5 unique items</strong> (5 different bags)</li>
+                  <li>• Each bag can have <strong>multiple quantities</strong> of the same item</li>
+                  <li>• Example: 3 apples, 2 steaks, 1 bread, 4 yogurts, 6 eggs = 5 bags ✅</li>
+                </ul>
+              </div>
             </motion.div>
 
             {/* How It Works */}
@@ -109,10 +119,10 @@ export function GameRulesModal({ isOpen, onClose }: GameRulesModalProps) {
                 <div className="bg-gray-50 rounded-lg p-4">
                   <div className="flex items-center space-x-2 mb-2">
                     <div className="w-6 h-6 bg-elastic-green text-white rounded-full flex items-center justify-center text-sm font-semibold">3</div>
-                    <span className="font-semibold">Build Your Cart</span>
+                    <span className="font-semibold">Fill 5 Bags</span>
                   </div>
                   <p className="text-gray-600 text-sm">
-                    Add items to reach $100 - every penny counts!
+                    Add exactly 5 unique items to reach $100 - strategic choices win!
                   </p>
                 </div>
 
@@ -144,16 +154,33 @@ export function GameRulesModal({ isOpen, onClose }: GameRulesModalProps) {
               
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-gray-700">Price Accuracy (70 points max)</span>
+                  <span className="text-gray-700">Price Accuracy (up to 100 points)</span>
                   <span className="text-sm text-gray-500">Closer to $100 = Higher score</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-gray-700">Speed Bonus (30 points max)</span>
-                  <span className="text-sm text-gray-500">Faster completion = More points</span>
+                  <span className="text-gray-700">Budget Bonus (+5 points)</span>
+                  <span className="text-sm text-gray-500">Stay under $100</span>
                 </div>
-                <div className="flex items-center justify-between border-t pt-2">
-                  <span className="font-semibold text-gray-900">Over $100?</span>
-                  <span className="text-vegas-red font-semibold">Score = 0 😱</span>
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-700">Speed Bonus (up to +10 points)</span>
+                  <span className="text-sm text-gray-500">Finish under 2 minutes</span>
+                </div>
+                <div className="border-t pt-3 space-y-2">
+                  <div className="font-semibold text-gray-900 mb-2">⚠️ Instant Score = 0 if:</div>
+                  <div className="text-sm space-y-1">
+                    <div className="flex items-center justify-between">
+                      <span className="text-red-600">• Not exactly 5 bags</span>
+                      <span className="text-xs text-gray-500">(too many or too few items)</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-red-600">• Over $100.00</span>
+                      <span className="text-xs text-gray-500">(even $100.01 = 0 points)</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-red-600">• Multiple item types per bag</span>
+                      <span className="text-xs text-gray-500">(each bag = 1 item type only)</span>
+                    </div>
+                  </div>
                 </div>
               </div>
             </motion.div>
@@ -194,12 +221,19 @@ export function GameRulesModal({ isOpen, onClose }: GameRulesModalProps) {
               className="text-center py-4 border-t border-gray-200"
             >
               <p className="text-gray-600 text-sm mb-2">Powered by</p>
-              <div className="flex items-center justify-center space-x-2">
-                <div className="bg-elastic-blue w-6 h-6 rounded flex items-center justify-center">
-                  <span className="text-white text-xs font-bold">E</span>
-                </div>
-                <span className="font-semibold text-elastic-blue">Elastic Agent Builder</span>
-              </div>
+              <a 
+                href="https://www.elastic.co" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="inline-flex items-center justify-center space-x-2 hover:opacity-80 transition-opacity cursor-pointer"
+              >
+                <img 
+                  src="/elastic-logo.png" 
+                  alt="Elastic" 
+                  className="h-6 w-6"
+                />
+                <span className="font-semibold text-elastic-blue hover:text-elastic-blue/80">Elastic Agent Builder</span>
+              </a>
             </motion.div>
 
             {/* Action Button */}

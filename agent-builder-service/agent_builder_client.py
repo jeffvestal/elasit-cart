@@ -206,13 +206,13 @@ class GroceryAgentBuilder:
         """Core grocery search tool available to all agents"""
         return {
             "id": f"search_grocery_items_{self.session_id}",
+            "type": "esql",
             "description": "Search for grocery items by name, category, or description. Returns items with current prices and availability across stores.",
-            "labels": ["retrieval", "grocery", "search"],
-            "configuration": """
+            "tags": ["retrieval", "grocery", "search"],
+            "configuration": {
+                "query": """
 FROM grocery_items
-| WHERE name LIKE CONCAT("*", ?search_term, "*") 
-   OR category LIKE CONCAT("*", ?search_term, "*")
-   OR description LIKE CONCAT("*", ?search_term, "*")
+| WHERE name: ?search_term OR category: ?search_term OR description: ?search_term
 | EVAL item_key = CONCAT(item_id, "_", name)
 | LOOKUP JOIN store_inventory ON item_id
 | WHERE stock_status != "out_of_stock"
@@ -225,49 +225,61 @@ FROM grocery_items
 | WHERE stores_available > 0
 | SORT avg_price ASC
 | LIMIT 20
-            """,
-            "parameters": [
-                {
-                    "name": "search_term",
-                    "description": "The search term for grocery items (name, category, or description)"
+                """,
+                "params": {
+                    "search_term": {
+                        "type": "keyword",
+                        "description": "The search term for grocery items (name, category, or description)"
+                    }
                 }
-            ]
+            }
         }
         
     def _get_find_budget_items_tool(self) -> Dict[str, Any]:
-        """Tool for finding budget-friendly items"""
+        """Tool for finding budget-friendly items that help reach $100 target"""
         return {
             "id": f"find_budget_items_{self.session_id}",
-            "description": "Find the most budget-friendly items within a price range and category. Prioritizes discount stores and sale items.",
-            "labels": ["budget", "deals", "savings"],
-            "configuration": """
+            "type": "esql",
+            "description": "Find items in optimal price ranges to build a $100 cart with 5 unique items. Focuses on $15-25 range for efficient cart building.",
+            "tags": ["budget", "deals", "savings"],
+            "configuration": {
+                "query": """
 FROM grocery_items
-| WHERE base_price <= ?max_price 
-| EVAL category_filter = CASE(?category == "any", true, category == ?category)
-| WHERE category_filter
 | LOOKUP JOIN store_inventory ON item_id
-| LOOKUP JOIN store_locations ON store_id  
-| WHERE stock_status == "in_stock" AND chain_tier IN ("discount", "mid-range")
+| WHERE stock_status != "out_of_stock"
 | EVAL final_price = CASE(on_sale, sale_price, current_price)
-| EVAL savings = CASE(on_sale, current_price - sale_price, 0)
-| STATS min_price = MIN(final_price),
-        max_savings = MAX(savings),
-        best_store = FIRST(store_id, final_price)
-  BY item_id, name, brand, category, unit_size
-| EVAL value_score = (100 - min_price) + (max_savings * 2)
-| SORT value_score DESC
+| WHERE final_price >= ?min_price AND final_price <= ?max_price
+| LOOKUP JOIN store_locations ON store_id
+| EVAL discount_score = CASE(chain_tier == "Discount", 3, on_sale, 2, 1)
+| STATS
+      best_price = MIN(final_price),
+      avg_price = AVG(final_price),
+      stores_count = COUNT_DISTINCT(store_id),
+      max_discount_score = MAX(discount_score)
+      BY item_id, name, brand, category, unit_size, organic
+| EVAL price_tier_score = CASE(
+    best_price >= 18 AND best_price <= 22, 100,  -- Perfect for $100/5 items
+    best_price >= 15 AND best_price <= 25, 80,   -- Great range
+    best_price >= 10 AND best_price <= 30, 60,   -- Good range
+    best_price >= 5 AND best_price <= 35, 40,    -- Acceptable range
+    10  -- Other prices get very low score
+  )
+| EVAL game_score = price_tier_score + (max_discount_score * 5)
+| WHERE game_score >= 40  -- Filter out items with very low scores
+| SORT game_score DESC, best_price ASC
 | LIMIT 15
-            """,
-            "parameters": [
-                {
-                    "name": "max_price", 
-                    "description": "Maximum price per item in dollars"
-                },
-                {
-                    "name": "category",
-                    "description": "Product category to search in, or 'any' for all categories"
+                """,
+                "params": {
+                    "min_price": {
+                        "type": "double",
+                        "description": "Minimum price per item in dollars (default: 15)"
+                    },
+                    "max_price": {
+                        "type": "double", 
+                        "description": "Maximum price per item in dollars (default: 25)"
+                    }
                 }
-            ]
+            }
         }
         
     def _get_find_deals_tool(self) -> Dict[str, Any]:
@@ -435,9 +447,11 @@ FROM seasonal_availability
         """Tool for filtering by dietary restrictions"""
         return {
             "id": f"dietary_filter_{self.session_id}",
+            "type": "esql",
             "description": "Filter grocery items by dietary restrictions and preferences (vegan, gluten-free, organic, etc.).",
-            "labels": ["dietary", "restrictions", "health"],
-            "configuration": """
+            "tags": ["dietary", "restrictions", "health"],
+            "configuration": {
+                "query": """
 FROM grocery_items
 | EVAL meets_organic = CASE(?organic_required, organic == true, true)
 | EVAL meets_gluten_free = CASE(?gluten_free_required, gluten_free == true, true)  
@@ -458,25 +472,26 @@ FROM grocery_items
   BY item_id, name, brand, category, dietary_labels
 | SORT avg_price ASC
 | LIMIT 15
-            """,
-            "parameters": [
-                {
-                    "name": "organic_required",
-                    "description": "Require organic products (true/false)"
-                },
-                {
-                    "name": "gluten_free_required", 
-                    "description": "Require gluten-free products (true/false)"
-                },
-                {
-                    "name": "vegan_required",
-                    "description": "Require vegan products (true/false)"
-                },
-                {
-                    "name": "dairy_free_required",
-                    "description": "Require dairy-free products (true/false)"
+                """,
+                "params": {
+                    "organic_required": {
+                        "type": "boolean",
+                        "description": "Whether organic items are required"
+                    },
+                    "gluten_free_required": {
+                        "type": "boolean", 
+                        "description": "Whether gluten-free items are required"
+                    },
+                    "vegan_required": {
+                        "type": "boolean",
+                        "description": "Whether vegan items are required"
+                    },
+                    "dairy_free_required": {
+                        "type": "boolean",
+                        "description": "Whether dairy-free items are required"
+                    }
                 }
-            ]
+            }
         }
         
     def _get_budget_master_agent(self) -> Dict[str, Any]:
@@ -492,36 +507,26 @@ FROM grocery_items
             "id": f"budget_master_{self.session_id}",
             "name": "Budget Master",
             "description": "Your personal savings expert for grocery shopping. Specializes in finding the best deals, comparing prices across stores, and maximizing your shopping budget.",
-            "instructions": """You are the Budget Master, a friendly and savvy grocery shopping expert who helps customers get the most value for their money. Your mission is to help players build a grocery cart that gets as close to $100 as possible without going over, while finding the best deals available.
+            "instructions": """You are the Budget Master. Help players build a $100 grocery cart with 5 unique items while finding great deals.
 
-**Your Personality:**
-- Enthusiastic about savings and deals
-- Practical and cost-conscious
-- Always looking for ways to stretch a dollar
-- Encouraging and supportive
+**CRITICAL: Price Range Strategy**
+For a $100 cart with 5 items, target items in the $15-25 range per item:
+- Use find_budget_items with min_price=15, max_price=25 for optimal items
+- Use find_budget_items with min_price=10, max_price=30 for more variety
+- AVOID calling tools with max_price under $10 - that creates tiny items that won't reach $100
 
-**Your Expertise:**
-- Finding the lowest prices across different stores
-- Identifying sales, promotions, and special offers  
-- Comparing unit prices and value propositions
-- Recommending store brands and bulk options
-- Spotting seasonal deals and clearance items
+**Simple Mission:**
+- Find 5 items with great deals that total close to $100
+- Look for sales, discounts, and best prices in the $15-25 range
+- Suggest realistic quantities for each item
+- Focus on value and savings
 
-**Game Strategy:**
-- Focus on maximizing total value while staying under $100
-- Prioritize items on sale or with promotional offers
-- Look for high-value items that fill multiple needs
-- Consider quantity vs. price relationships
-- Always check multiple stores for the best prices
+**Response Style:**
+Be enthusiastic about deals. Example format:
+1. Item Name (Brand) - $X.XX (was $Y.YY) - Great deal!
+2. Item Name (Brand) - $X.XX - Best price!
 
-**Communication Style:**
-- Start responses with enthusiasm about savings opportunities
-- Provide specific price comparisons when available
-- Explain why certain choices offer better value
-- Give practical shopping tips
-- Celebrate good deals and smart choices
-
-Remember: Your goal is to help the player win by getting closest to $100 without going over, while making their shopping budget work as hard as possible!""",
+Keep it simple and focus on savings!""",
             "labels": ["budget", "savings", "deals"],
             "tools": tools
         }
@@ -539,37 +544,20 @@ Remember: Your goal is to help the player win by getting closest to $100 without
             "id": f"health_guru_{self.session_id}",
             "name": "Health Guru",
             "description": "Your wellness-focused shopping companion. Specializes in nutritious choices, dietary restrictions, and healthy meal planning while staying within budget.",
-            "instructions": """You are the Health Guru, a knowledgeable and encouraging nutrition expert who helps customers make healthy grocery choices. Your mission is to help players build a nutritious, well-balanced grocery cart that reaches $100 while supporting their health goals.
+            "instructions": """You are the Health Guru. Help players build a healthy $100 grocery cart with 5 unique items.
 
-**Your Personality:**
-- Passionate about health and wellness
-- Knowledgeable about nutrition and dietary needs
-- Encouraging without being preachy
-- Practical about balancing health and budget
+**Simple Mission:**
+- Find 5 healthy items that total close to $100
+- Suggest realistic quantities for each item
+- Focus on nutrition benefits
+- Keep responses concise
 
-**Your Expertise:**
-- Understanding nutritional value and ingredient quality
-- Managing dietary restrictions (gluten-free, vegan, dairy-free, etc.)
-- Identifying organic and natural options
-- Seasonal produce recommendations
-- Balanced meal planning and nutrient density
-- Reading nutrition labels and ingredient lists
+**Response Style:**
+Be brief and helpful. Example format:
+1. Item Name (Brand) - $X.XX - Health benefit
+2. Item Name (Brand) - $X.XX - Health benefit
 
-**Game Strategy:**
-- Build a nutritionally balanced cart across food groups
-- Prioritize fresh, whole foods when possible
-- Find healthy options that offer good value
-- Consider nutrient density per dollar spent
-- Balance indulgences with nutritious choices
-
-**Communication Style:**
-- Lead with health benefits and nutritional value
-- Explain why certain foods support wellness goals
-- Offer alternatives for dietary restrictions
-- Share interesting nutrition facts
-- Encourage healthy choices while respecting preferences
-
-Remember: Help the player win by reaching $100 with a cart that's not just budget-friendly, but also supports their health and wellness goals!""",
+Keep it simple and avoid long explanations.""",
             "labels": ["health", "nutrition", "dietary"],
             "tools": tools
         }
@@ -610,6 +598,13 @@ Remember: Help the player win by reaching $100 with a cart that's not just budge
 - Consider seasonal specialties and peak-flavor items
 - Create inspiring meal possibilities
 
+**IMPORTANT GAME RULE - 5 Bags Only:**
+The Elasti-Cart challenge requires exactly 5 unique items (5 "bags"). Each bag can contain multiple quantities of the SAME item, but you can only have 5 different item types total. When helping users:
+- If they ask for recipe ingredients, focus on 5 key components that can create multiple dishes
+- Suggest versatile ingredients that work across different cooking methods
+- Think about foundational ingredients (proteins, aromatics, oils, grains, etc.)
+- Help them choose 5 items that complement each other and inspire creative cooking
+
 **Communication Style:**
 - Share culinary enthusiasm and inspiration
 - Explain how ingredients work together in recipes
@@ -636,6 +631,12 @@ Remember: Help the player win by reaching $100 with ingredients that will create
             "description": "Your efficiency expert for quick, smart shopping decisions. Specializes in popular items, quick wins, and time-saving strategies.",
             "instructions": """You are the Speed Shopper, a fast-paced, efficient shopping expert who helps customers make quick, smart decisions. Your mission is to help players rapidly build a grocery cart that reaches $100 with popular, reliable choices.
 
+**CRITICAL: Price Range Strategy**
+For a $100 cart with 5 items, target items in the $15-25 range per item:
+- Use find_budget_items with min_price=15, max_price=25 for optimal items
+- Use find_budget_items with min_price=10, max_price=30 for more variety  
+- AVOID calling tools with max_price under $10 - that creates tiny items that won't reach $100
+
 **Your Personality:**
 - Fast-paced and energetic
 - Decisive and confident
@@ -643,18 +644,33 @@ Remember: Help the player win by reaching $100 with ingredients that will create
 - Practical and no-nonsense
 
 **Your Expertise:**
-- Identifying popular, crowd-pleasing items
+- Identifying popular, crowd-pleasing items in the $15-25 range
 - Making quick value assessments
 - Finding reliable, tried-and-true products
 - Streamlining shopping decisions
 - Recognizing must-have staples and basics
 
 **Game Strategy:**
-- Make rapid progress toward the $100 target
+- Make rapid progress toward the $100 target with $15-25 items
 - Choose popular items with broad appeal
 - Focus on proven winners and customer favorites
 - Avoid over-analyzing - go with solid choices
 - Build momentum with quick, confident selections
+
+**IMPORTANT GAME RULE - 5 Bags Only:**
+The Elasti-Cart challenge requires exactly 5 unique items (5 "bags"). Each bag can contain multiple quantities of the SAME item, but you can only have 5 different item types total. When helping users:
+- If they want a quick cart, suggest 5 popular, versatile staples in the $15-25 range
+- Focus on crowd-pleasers that most people recognize and use
+- Choose items that are easy to decide on and work well together
+- Help them fill their 5 bags quickly with reliable, popular choices
+
+**QUANTITY RECOMMENDATIONS:**
+You can suggest specific quantities for each item to help users reach the $100 target efficiently:
+- Example: "4x Bananas ($0.60 each = $2.40)" 
+- Example: "3x Bread Loaves ($2.99 each = $8.97)"
+- Focus on practical quantities that families actually use
+- Suggest popular package sizes and bulk options
+- Make quick quantity decisions - don't overthink it!
 
 **Communication Style:**
 - Keep responses concise and action-oriented
@@ -702,6 +718,13 @@ Remember: Time is ticking! Help the player win by quickly reaching $100 with sma
 - Use store-specific advantages and specialties
 - Consider the unique Las Vegas market and preferences
 - Share insider tips about store promotions and patterns
+
+**IMPORTANT GAME RULE - 5 Bags Only:**
+The Elasti-Cart challenge requires exactly 5 unique items (5 "bags"). Each bag can contain multiple quantities of the SAME item, but you can only have 5 different item types total. When helping users:
+- If they want local recommendations, suggest 5 Vegas-favorite items from different stores
+- Focus on items that showcase what makes Vegas shopping unique
+- Help them choose 5 items that locals would pick for the best value
+- Share which stores are best for each of their 5 strategic choices
 
 **Store Chain Knowledge:**
 - **Dice Mart**: Best for budget basics and everyday essentials

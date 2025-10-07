@@ -24,12 +24,15 @@ class GroceryDataControl:
         self.llm_client = None
         self.data_generator = None
         
-    async def initialize_clients(self, es_url, es_api_key, llm_provider="bedrock"):
+    async def initialize_clients(self, es_url=None, es_api_key=None, llm_provider="bedrock", llm_model=None, skip_es=False, **llm_kwargs):
         """Initialize Elasticsearch and LLM clients"""
-        self.es_client = ElasticsearchClient(es_url, es_api_key)
-        await self.es_client.connect()
+        if not skip_es and es_url and es_api_key:
+            self.es_client = ElasticsearchClient(es_url, es_api_key)
+            await self.es_client.connect()
+        elif not skip_es:
+            print("⚠️  No Elasticsearch connection - some features will be limited to file generation only")
         
-        self.llm_client = LLMClient(provider=llm_provider)
+        self.llm_client = LLMClient(provider=llm_provider, model=llm_model, **llm_kwargs)
         await self.llm_client.initialize()
         
         self.data_generator = GroceryDataGenerator(self.es_client, self.llm_client)
@@ -198,29 +201,162 @@ class GroceryDataControl:
             print("❌ Invalid input. Configuration unchanged.")
 
 async def main():
-    parser = argparse.ArgumentParser(description="Grocery Data Generator")
-    parser.add_argument("--es-url", required=True, help="Elasticsearch URL")
-    parser.add_argument("--es-api-key", required=True, help="Elasticsearch API Key")
+    parser = argparse.ArgumentParser(
+        description="Grocery Data Generator",
+        epilog="""
+LLM Credential Setup:
+  AWS Bedrock (recommended):
+    export AWS_ACCESS_KEY_ID=your_access_key
+    export AWS_SECRET_ACCESS_KEY=your_secret_key  
+    export AWS_DEFAULT_REGION=us-west-2
+    
+  OpenAI:
+    export OPENAI_API_KEY=your_api_key
+    
+  Azure OpenAI:
+    export AZURE_OPENAI_ENDPOINT=your_endpoint
+    export AZURE_OPENAI_API_KEY=your_api_key
+
+Examples:
+  Interactive mode:
+    python control.py --es-url https://your-cluster.es.io:443 --es-api-key YOUR_KEY
+    # OR using environment variables:
+    export ELASTICSEARCH_URL=https://your-cluster.es.io:443
+    export ELASTICSEARCH_API_KEY=YOUR_KEY
+    python control.py
+    
+  Generate all data and load to ES:
+    python control.py --action generate-and-load
+    
+  Generate data only (save to files):
+    python control.py --action generate-only
+    
+  Load existing files to ES:
+    python control.py --action load-only
+        """,
+        formatter_class=argparse.RawDescriptionHelpFormatter
+    )
+    
+    # Required arguments (but made optional for generate-only mode)
+    parser.add_argument("--es-url", help="Elasticsearch URL (required for load/interactive modes, or set ELASTICSEARCH_URL env var)")
+    parser.add_argument("--es-api-key", help="Elasticsearch API Key (required for load/interactive modes, or set ELASTICSEARCH_API_KEY env var)")
+    
+    # Action selection (new!)
+    parser.add_argument("--action", choices=["generate-and-load", "generate-only", "load-only", "update-dynamic", "interactive"], 
+                       default="interactive", help="Action to perform")
+    
+    # LLM configuration
     parser.add_argument("--llm-provider", default="bedrock", choices=["bedrock", "openai", "azure"], 
-                       help="LLM provider to use")
-    parser.add_argument("--generate-all", action="store_true", help="Generate all data and exit")
-    parser.add_argument("--update-dynamic", action="store_true", help="Update only dynamic data")
-    parser.add_argument("--load-to-es", action="store_true", help="Load generated files to Elasticsearch")
+                       help="LLM provider to use (default: bedrock)")
+    parser.add_argument("--llm-model", help="Specific model to use (optional)")
+    parser.add_argument("--aws-region", default="us-west-2", help="AWS region for Bedrock (default: us-west-2)")
+    
+    # LLM credentials (optional, can use env vars)
+    parser.add_argument("--openai-api-key", help="OpenAI API key (or set OPENAI_API_KEY env var)")
+    parser.add_argument("--azure-endpoint", help="Azure OpenAI endpoint (or set AZURE_OPENAI_ENDPOINT env var)")
+    parser.add_argument("--azure-api-key", help="Azure OpenAI API key (or set AZURE_OPENAI_API_KEY env var)")
+    
+    # Data configuration
+    parser.add_argument("--items", type=int, default=50000, help="Number of grocery items to generate (default: 50000)")
+    parser.add_argument("--stores", type=int, default=20, help="Number of stores to generate (default: 20)")
+    parser.add_argument("--inventory-per-store", type=int, default=15000, help="Inventory items per store (default: 15000)")
+    parser.add_argument("--city", default="Las Vegas", help="Target city for stores (default: Las Vegas)")
+    
+    # Legacy flags for backward compatibility
+    parser.add_argument("--generate-all", action="store_true", help="[DEPRECATED] Use --action generate-and-load")
+    parser.add_argument("--update-dynamic", action="store_true", help="[DEPRECATED] Use --action update-dynamic")
+    parser.add_argument("--load-to-es", action="store_true", help="[DEPRECATED] Use --action load-only")
     
     args = parser.parse_args()
     
+    # Add environment variable fallbacks for ES credentials
+    import os
+    if not args.es_url:
+        args.es_url = os.getenv('ELASTICSEARCH_URL') or os.getenv('ES_URL')
+    if not args.es_api_key:
+        args.es_api_key = os.getenv('ELASTICSEARCH_API_KEY') or os.getenv('ES_API_KEY')
+    
+    # Check if ES credentials are required for the selected action
+    es_required_actions = ["generate-and-load", "load-only", "update-dynamic", "interactive"]
+    if args.action in es_required_actions and (not args.es_url or not args.es_api_key):
+        print(f"❌ Elasticsearch URL and API key are required for --action {args.action}")
+        print("💡 For generate-only mode, ES credentials are not needed!")
+        sys.exit(1)
+    
+    skip_es = args.action == "generate-only"
+    
     control = GroceryDataControl()
     
-    try:
-        await control.initialize_clients(args.es_url, args.es_api_key, args.llm_provider)
+    # Handle legacy flags
+    if args.generate_all:
+        print("⚠️  --generate-all is deprecated. Use --action generate-and-load")
+        args.action = "generate-and-load"
+    elif args.update_dynamic:
+        print("⚠️  --update-dynamic is deprecated. Use --action update-dynamic")
+        args.action = "update-dynamic"  
+    elif args.load_to_es:
+        print("⚠️  --load-to-es is deprecated. Use --action load-only")
+        args.action = "load-only"
+    
+    # Prepare LLM kwargs
+    llm_kwargs = {'region': args.aws_region}
+    
+    if args.llm_provider == "openai":
+        import os
+        api_key = args.openai_api_key or os.getenv('OPENAI_API_KEY')
+        if not api_key:
+            print("❌ OpenAI API key required. Set OPENAI_API_KEY environment variable or use --openai-api-key")
+            sys.exit(1)
+        llm_kwargs['api_key'] = api_key
         
-        if args.generate_all:
+    elif args.llm_provider == "azure":
+        import os
+        endpoint = args.azure_endpoint or os.getenv('AZURE_OPENAI_ENDPOINT')
+        api_key = args.azure_api_key or os.getenv('AZURE_OPENAI_API_KEY')
+        if not endpoint or not api_key:
+            print("❌ Azure endpoint and API key required. Set AZURE_OPENAI_ENDPOINT and AZURE_OPENAI_API_KEY environment variables")
+            sys.exit(1)
+        llm_kwargs.update({'endpoint': endpoint, 'api_key': api_key})
+    
+    try:
+        print(f"🔧 Initializing {args.llm_provider} LLM client...")
+        await control.initialize_clients(
+            args.es_url, 
+            args.es_api_key, 
+            args.llm_provider,
+            llm_model=args.llm_model,
+            skip_es=skip_es,
+            **llm_kwargs
+        )
+        
+        # Apply data configuration
+        if hasattr(control, 'data_generator') and control.data_generator:
+            config = {
+                'grocery_items': args.items,
+                'store_count': args.stores,
+                'inventory_per_store': args.inventory_per_store,
+                'city': args.city,
+                'store_chains': 5,
+                'seasonal_items': True,
+                'promotions': True
+            }
+            control.data_generator.update_configuration(config)
+        
+        print(f"✅ Initialized! Action: {args.action}")
+        
+        # Execute the requested action
+        if args.action == "generate-and-load":
             await control.generate_all_data()
-        elif args.update_dynamic:
-            await control.update_dynamic_data()
-        elif args.load_to_es:
             await control.load_data_to_elasticsearch()
-        else:
+        elif args.action == "generate-only":
+            await control.generate_all_data()
+            print("📁 Data generated and saved to files. Use --action load-only to load to Elasticsearch.")
+        elif args.action == "load-only":
+            await control.load_data_to_elasticsearch()
+        elif args.action == "update-dynamic":
+            await control.update_dynamic_data()
+            await control.load_data_to_elasticsearch()
+        elif args.action == "interactive":
             await control.interactive_menu()
             
     except KeyboardInterrupt:

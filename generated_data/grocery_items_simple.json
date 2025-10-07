@@ -1,0 +1,7 @@
+[
+  {"name": "Extra Virgin Olive Oil", "brand": "Pompeian", "category": "Oils & Vinegars", "price": 8.99, "description": "Cold-pressed extra virgin olive oil from Spain, 16 fl oz"},
+  {"name": "Jasmine Rice", "brand": "Dynasty", "category": "Grains & Rice", "price": 12.49, "description": "Premium Thai jasmine rice, 5 lb bag"},
+  {"name": "Greek Yogurt", "brand": "Chobani", "category": "Dairy", "price": 1.29, "description": "Non-fat Greek yogurt, strawberry flavor, 5.3 oz"},
+  {"name": "Sourdough Bread", "brand": "Boudin", "category": "Bakery", "price": 4.79, "description": "Authentic San Francisco sourdough bread, 24 oz loaf"},
+  {"name": "Frozen Mixed Berries", "brand": "Cascadian Farm", "category": "Frozen Foods", "price": 5.99, "description": "Organic frozen berry blend with strawberries, blueberries, and raspberries, 10 oz"}
+]

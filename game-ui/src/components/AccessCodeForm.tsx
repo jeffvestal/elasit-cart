@@ -27,8 +27,8 @@ export function AccessCodeForm({ onSuccess, className = '' }: AccessCodeFormProp
 
     if (!formData.accessCode.trim()) {
       newErrors.accessCode = 'Access code is required';
-    } else if (formData.accessCode.length !== 6) {
-      newErrors.accessCode = 'Access code must be 6 characters';
+    } else if (formData.accessCode.length < 4) {
+      newErrors.accessCode = 'Access code must be at least 4 characters';
     }
 
     if (!formData.playerName.trim()) {
@@ -74,20 +74,20 @@ export function AccessCodeForm({ onSuccess, className = '' }: AccessCodeFormProp
 
       const data = await response.json();
 
-      if (data.valid) {
-        // Create session
+      if (data.success) {
+        // Create session from API response
         setSession({
-          sessionId: data.session_id,
-          playerName: formData.playerName,
-          playerEmail: formData.playerEmail,
-          company: formData.company,
-          accessCode: formData.accessCode,
+          sessionId: data.session.sessionId,
+          playerName: data.session.playerName,
+          playerEmail: data.session.playerEmail,
+          company: data.session.company,
+          accessCode: data.session.accessCode,
           totalPrice: 0,
-          targetPrice: 100,
+          targetPrice: data.session.targetPrice,
           completed: false,
         });
 
-        toast.success('Welcome to The Price is Bot! 🎉');
+        toast.success('Welcome to Elasti-Cart! 🎉');
         onSuccess();
       } else {
         toast.error(data.message || 'Invalid access code');
@@ -132,7 +132,7 @@ export function AccessCodeForm({ onSuccess, className = '' }: AccessCodeFormProp
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="bg-white rounded-2xl shadow-xl border border-gray-200 overflow-hidden"
+        className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700 overflow-hidden transition-colors"
       >
         {/* Header */}
         <div className="bg-gradient-to-r from-vegas-gold via-vegas-red to-purple-600 p-6">
@@ -146,7 +146,7 @@ export function AccessCodeForm({ onSuccess, className = '' }: AccessCodeFormProp
               <Key className="h-8 w-8 text-white" />
             </motion.div>
             <h1 className="text-2xl font-bold text-white mb-2">
-              The Price is Bot
+              Elasti-Cart
             </h1>
             <p className="text-white/90 text-sm">
               Enter your access code to start the challenge!
@@ -158,7 +158,7 @@ export function AccessCodeForm({ onSuccess, className = '' }: AccessCodeFormProp
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
           {/* Access Code */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 transition-colors">
               Access Code
             </label>
             <div className="relative">
@@ -172,8 +172,8 @@ export function AccessCodeForm({ onSuccess, className = '' }: AccessCodeFormProp
                 className={`w-full pl-10 pr-4 py-3 border rounded-xl focus:ring-2 focus:ring-elastic-blue focus:border-transparent transition-colors ${
                   errors.accessCode ? 'border-red-300 bg-red-50' : 'border-gray-300'
                 }`}
-                placeholder="Enter 6-digit code"
-                maxLength={6}
+                placeholder="Enter access code (e.g., DEMO01 or ELASTI-XXXX)"
+                maxLength={20}
               />
             </div>
             {errors.accessCode && (
@@ -186,13 +186,14 @@ export function AccessCodeForm({ onSuccess, className = '' }: AccessCodeFormProp
               </motion.p>
             )}
             <p className="mt-2 text-xs text-gray-500">
-              Demo users can try: <code className="bg-gray-100 px-1 rounded">DEMO01</code>
+              Demo codes: <code className="bg-gray-100 px-1 rounded">DEMO01</code>, <code className="bg-gray-100 px-1 rounded">TEST01</code>
+              <br />Generated codes: <code className="bg-gray-100 px-1 rounded">ELASTI-XXXX</code>
             </p>
           </div>
 
           {/* Player Name */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 transition-colors">
               Your Name
             </label>
             <div className="relative">
@@ -222,7 +223,7 @@ export function AccessCodeForm({ onSuccess, className = '' }: AccessCodeFormProp
 
           {/* Email */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 transition-colors">
               Email Address
             </label>
             <div className="relative">
@@ -252,7 +253,7 @@ export function AccessCodeForm({ onSuccess, className = '' }: AccessCodeFormProp
 
           {/* Company (Optional) */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 transition-colors">
               Company <span className="text-gray-400">(optional)</span>
             </label>
             <div className="relative">
@@ -291,12 +292,19 @@ export function AccessCodeForm({ onSuccess, className = '' }: AccessCodeFormProp
 
         {/* Footer */}
         <div className="bg-gray-50 px-6 py-4 border-t border-gray-200">
-          <div className="flex items-center justify-center space-x-2 text-sm text-gray-600">
-            <div className="bg-elastic-blue w-5 h-5 rounded flex items-center justify-center">
-              <span className="text-white text-xs font-bold">E</span>
-            </div>
+          <a 
+            href="https://www.elastic.co" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="flex items-center justify-center space-x-2 text-sm text-gray-600 hover:text-gray-800 transition-colors cursor-pointer"
+          >
+            <img 
+              src="/elastic-logo.png" 
+              alt="Elastic" 
+              className="h-5 w-5"
+            />
             <span>Powered by Elastic Agent Builder</span>
-          </div>
+          </a>
         </div>
       </motion.div>
     </div>

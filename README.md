@@ -40,34 +40,72 @@ This system consists of four main components:
 
 ## 🚀 Quick Start
 
+### Automated Setup (Recommended)
+
+```bash
+# Full setup (Python + Node.js)
+./setup.sh
+
+# Python components only  
+./setup-python.sh
+```
+
+### Activate Environment
+
+```bash
+# Quick activation
+source ./activate.sh
+
+# Or manually
+source venv/bin/activate
+```
+
 ### 1. Generate Data
 ```bash
+# Using convenience script
+./run-data-generator.sh --es-url YOUR_ES_URL --es-api-key YOUR_KEY --action generate-and-load
+
+# Or manually
+source venv/bin/activate
 cd grocery-data-generator
-pip install -r requirements.txt
-python control.py --es-url YOUR_ES_URL --es-api-key YOUR_KEY --generate-all
+python control.py --es-url YOUR_ES_URL --es-api-key YOUR_KEY --action generate-and-load
 ```
 
 ### 2. Start Leaderboard API
 ```bash
+# Using convenience script
+./run-leaderboard-api.sh
+
+# Or manually
+source venv/bin/activate
 cd leaderboard-api
-pip install -r requirements.txt
-export ELASTICSEARCH_URL=YOUR_ES_URL
-export ELASTICSEARCH_API_KEY=YOUR_KEY
-python main.py
+uvicorn main:app --reload
 ```
 
-### 3. Launch Game UI
+### 3. Test Agent Builder
 ```bash
+# Using convenience script
+./run-agent-builder.sh
+
+# Or manually
+source venv/bin/activate
+cd agent-builder-service
+python agent_builder_client.py
+```
+
+### 4. Start Game UI
+```bash
+# Using convenience script (requires Node.js)
+./run-game-ui.sh
+
+# Or manually
 cd game-ui
-npm install
 npm run dev
 ```
 
-### 4. Create Agent Builder Components
-```bash
-cd agent-builder-service
-# Use the provided API client to create agents/tools per session
-```
+## 💡 Unified Virtual Environment
+
+All Python components now use a **single virtual environment** located at `./venv`. No more switching between different environments!
 
 ## 📦 Components
 

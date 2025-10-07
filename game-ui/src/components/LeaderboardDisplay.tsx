@@ -6,13 +6,13 @@ import { Trophy, Medal, Award, Clock, DollarSign, User, Building, Sparkles } fro
 
 interface LeaderboardEntry {
   rank: number;
-  player_name: string;
+  playerName: string;
   company?: string;
-  selected_agent: string;
-  total_price: number;
+  agentUsed: string;
+  totalPrice: number;
   score: number;
-  game_duration: number;
-  completed_at: string;
+  timeUsed: number;
+  completedAt: string;
 }
 
 interface LeaderboardDisplayProps {
@@ -56,59 +56,74 @@ export function LeaderboardDisplay({
       const response = await fetch(`/api/leaderboard?limit=${limit}`);
       
       if (response.ok) {
-        const data = await response.json();
-        setEntries(data);
+        const result = await response.json();
+        if (result.success && Array.isArray(result.data)) {
+          // Transform API data to match our interface
+          const transformedData = result.data.map((item: any, index: number) => ({
+            rank: index + 1,
+            playerName: item.playerName,
+            company: item.company,
+            agentUsed: item.agentUsed,
+            totalPrice: item.totalPrice,
+            score: item.score,
+            timeUsed: item.timeUsed,
+            completedAt: item.completedAt,
+          }));
+          setEntries(transformedData);
+        } else {
+          throw new Error('Invalid API response format');
+        }
       } else {
         // Mock data for demo
         const mockData: LeaderboardEntry[] = [
           {
             rank: 1,
-            player_name: 'Sarah Chen',
+            playerName: 'Sarah Chen',
             company: 'Acme Corp',
-            selected_agent: 'budget_master',
-            total_price: 99.87,
+            agentUsed: 'budget_master',
+            totalPrice: 99.87,
             score: 98.5,
-            game_duration: 142,
-            completed_at: new Date(Date.now() - 1000 * 60 * 5).toISOString(),
+            timeUsed: 142,
+            completedAt: new Date(Date.now() - 1000 * 60 * 5).toISOString(),
           },
           {
             rank: 2,
-            player_name: 'Mike Rodriguez',
+            playerName: 'Mike Rodriguez',
             company: 'TechStart Inc',
-            selected_agent: 'health_guru',
-            total_price: 99.23,
+            agentUsed: 'health_guru',
+            totalPrice: 99.23,
             score: 96.8,
-            game_duration: 189,
-            completed_at: new Date(Date.now() - 1000 * 60 * 12).toISOString(),
+            timeUsed: 189,
+            completedAt: new Date(Date.now() - 1000 * 60 * 12).toISOString(),
           },
           {
             rank: 3,
-            player_name: 'Emily Johnson',
+            playerName: 'Emily Johnson',
             company: 'DataFlow Systems',
-            selected_agent: 'gourmet_chef',
-            total_price: 98.45,
+            agentUsed: 'gourmet_chef',
+            totalPrice: 98.45,
             score: 94.2,
-            game_duration: 201,
-            completed_at: new Date(Date.now() - 1000 * 60 * 8).toISOString(),
+            timeUsed: 201,
+            completedAt: new Date(Date.now() - 1000 * 60 * 8).toISOString(),
           },
           {
             rank: 4,
-            player_name: 'Alex Kim',
+            playerName: 'Alex Kim',
             company: 'Cloud Solutions',
-            selected_agent: 'speed_shopper',
-            total_price: 97.12,
+            agentUsed: 'speed_shopper',
+            totalPrice: 97.12,
             score: 92.7,
-            game_duration: 95,
-            completed_at: new Date(Date.now() - 1000 * 60 * 18).toISOString(),
+            timeUsed: 95,
+            completedAt: new Date(Date.now() - 1000 * 60 * 18).toISOString(),
           },
           {
             rank: 5,
-            player_name: 'Jordan Smith',
-            selected_agent: 'vegas_local',
-            total_price: 96.88,
+            playerName: 'Jordan Smith',
+            agentUsed: 'vegas_local',
+            totalPrice: 96.88,
             score: 91.3,
-            game_duration: 234,
-            completed_at: new Date(Date.now() - 1000 * 60 * 25).toISOString(),
+            timeUsed: 234,
+            completedAt: new Date(Date.now() - 1000 * 60 * 25).toISOString(),
           },
         ];
         setEntries(mockData);
@@ -191,7 +206,7 @@ export function LeaderboardDisplay({
               <div>
                 <h2 className="text-xl font-bold text-gray-900">Leaderboard</h2>
                 <p className="text-sm text-gray-600">
-                  Top performers in The Price is Bot challenge
+                  Top performers in Elasti-Cart challenge
                 </p>
               </div>
             </div>
@@ -241,7 +256,7 @@ export function LeaderboardDisplay({
           <div className="space-y-3">
             {entries.map((entry, index) => (
               <motion.div
-                key={`${entry.rank}-${entry.player_name}`}
+                key={`${entry.rank}-${entry.playerName}`}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.1 }}
@@ -262,7 +277,7 @@ export function LeaderboardDisplay({
                         <h3 className={`font-semibold truncate ${
                           entry.rank <= 3 ? 'text-white' : 'text-gray-900'
                         }`}>
-                          {entry.player_name}
+                          {entry.playerName}
                         </h3>
                         
                         {/* Agent Badge */}
@@ -271,8 +286,8 @@ export function LeaderboardDisplay({
                             ? 'bg-white/20 text-white' 
                             : 'bg-elastic-blue/10 text-elastic-blue'
                         }`}>
-                          <span>{agentEmojis[entry.selected_agent] || '🤖'}</span>
-                          <span>{agentNames[entry.selected_agent] || 'Agent'}</span>
+                          <span>{agentEmojis[entry.agentUsed] || '🤖'}</span>
+                          <span>{agentNames[entry.agentUsed] || 'Agent'}</span>
                         </div>
                       </div>
                       
@@ -297,14 +312,14 @@ export function LeaderboardDisplay({
                           <span className={`${
                             entry.rank <= 3 ? 'text-white/90' : 'text-gray-600'
                           }`}>
-                            {formatDuration(entry.game_duration)}
+                            {formatDuration(entry.timeUsed)}
                           </span>
                         </div>
                         
                         <div className={`text-xs ${
                           entry.rank <= 3 ? 'text-white/70' : 'text-gray-500'
                         }`}>
-                          {getTimeAgo(entry.completed_at)}
+                          {getTimeAgo(entry.completedAt)}
                         </div>
                       </div>
                     </div>
@@ -324,7 +339,7 @@ export function LeaderboardDisplay({
                         <span className={`text-sm font-medium ${
                           entry.rank <= 3 ? 'text-white/90' : 'text-gray-600'
                         }`}>
-                          {entry.total_price.toFixed(2)}
+                          {entry.totalPrice.toFixed(2)}
                         </span>
                       </div>
                     </div>
@@ -356,12 +371,19 @@ export function LeaderboardDisplay({
             <span>Live leaderboard</span>
           </div>
           
-          <div className="flex items-center space-x-1">
+          <a 
+            href="https://www.elastic.co" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="flex items-center space-x-1 hover:opacity-80 transition-opacity cursor-pointer"
+          >
             <span>Powered by</span>
-            <div className="bg-elastic-blue w-4 h-4 rounded flex items-center justify-center">
-              <span className="text-white text-xs font-bold">E</span>
-            </div>
-          </div>
+            <img 
+              src="/elastic-logo.png" 
+              alt="Elastic" 
+              className="h-4 w-4"
+            />
+          </a>
         </div>
       </div>
     </div>

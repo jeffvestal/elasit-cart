@@ -52,7 +52,7 @@ export function AdminPanel({ className = '' }: AdminPanelProps) {
       const expiresAt = new Date();
       expiresAt.setDate(expiresAt.getDate() + codeGeneration.expires_days);
 
-      const response = await fetch('/admin/generate-codes', {
+      const response = await fetch('/api/admin/generate-codes', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -88,7 +88,7 @@ export function AdminPanel({ className = '' }: AdminPanelProps) {
   const handleUpdateSettings = async () => {
     setIsLoading(true);
     try {
-      const response = await fetch('/admin/settings', {
+      const response = await fetch('/api/admin/settings', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -168,7 +168,7 @@ export function AdminPanel({ className = '' }: AdminPanelProps) {
           </div>
           <div>
             <h2 className="text-2xl font-bold text-white">Admin Panel</h2>
-            <p className="text-white/80">Manage The Price is Bot game</p>
+            <p className="text-white/80">Manage Elasti-Cart game</p>
           </div>
         </div>
       </div>

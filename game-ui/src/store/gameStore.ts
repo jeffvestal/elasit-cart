@@ -68,9 +68,10 @@ interface GameState {
   setSession: (session: GameSession) => void;
   clearSession: () => void;
   setSelectedAgent: (agent: Agent) => void;
-  addItem: (item: GameItem) => void;
+  addItem: (item: GameItem) => { success: boolean; message: string; isNewItem: boolean };
   removeItem: (itemId: string) => void;
   updateItemQuantity: (itemId: string, quantity: number) => void;
+  clearBag: (itemId: string) => void;
   startGame: () => void;
   endGame: () => void;
   setTimeRemaining: (time: number) => void;
@@ -166,17 +167,30 @@ export const useGameStore = create<GameState>()(
 
       setSelectedAgent: (agent) => set({ selectedAgent: agent }),
 
-      addItem: (item) => set((state) => {
-        const existingItem = state.currentItems.find(i => i.id === item.id);
+      addItem: (item) => {
+        const state = get();
+        const existingItem = state.currentItems.find(i => i.name === item.name);
+        
         if (existingItem) {
-          return {
+          // Item already exists, just increase quantity
+          set({
             currentItems: state.currentItems.map(i =>
-              i.id === item.id ? { ...i, quantity: i.quantity + item.quantity } : i
+              i.name === item.name ? { ...i, quantity: i.quantity + item.quantity } : i
             )
-          };
+          });
+          return { success: true, message: 'Quantity updated', isNewItem: false };
         }
-        return { currentItems: [...state.currentItems, item] };
-      }),
+        
+        // Check if we already have 5 bags (5 unique items)
+        if (state.currentItems.length >= 5) {
+          // Cannot add more unique items - we have 5 bags already
+          return { success: false, message: 'You already have 5 bags! Remove an item to add a new one.', isNewItem: true };
+        }
+        
+        // Add new unique item (new bag)
+        set({ currentItems: [...state.currentItems, item] });
+        return { success: true, message: 'Item added', isNewItem: true };
+      },
 
       removeItem: (itemId) => set((state) => ({
         currentItems: state.currentItems.filter(item => item.id !== itemId)
@@ -188,6 +202,10 @@ export const useGameStore = create<GameState>()(
           : state.currentItems.map(item =>
               item.id === itemId ? { ...item, quantity } : item
             )
+      })),
+
+      clearBag: (itemId) => set((state) => ({
+        currentItems: state.currentItems.filter(item => item.id !== itemId)
       })),
 
       startGame: () => set({ 

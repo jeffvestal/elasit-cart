@@ -1,0 +1,624 @@
+[
+  {
+    "store_id": "STORE_001",
+    "store_name": "Smith's Food & Drug",
+    "chain_name": "Kroger",
+    "chain_tier": "Premium",
+    "address": {
+      "street": "4350 E Tropicana Ave",
+      "city": "Las Vegas",
+      "state": "NV",
+      "zip_code": "89121",
+      "coordinates": {
+        "lat": 36.0956354791371,
+        "lon": -115.09378548057417
+      }
+    },
+    "phone": "702-356-4871",
+    "hours": {
+      "monday": "6:00 AM - 11:00 PM",
+      "tuesday": "6:00 AM - 11:00 PM",
+      "wednesday": "6:00 AM - 11:00 PM",
+      "thursday": "6:00 AM - 11:00 PM",
+      "friday": "6:00 AM - 12:00 AM",
+      "saturday": "6:00 AM - 12:00 AM",
+      "sunday": "7:00 AM - 10:00 PM"
+    },
+    "specialties": [
+      "Seafood counter",
+      "Fresh produce",
+      "Bulk items",
+      "International cuisine"
+    ]
+  },
+  {
+    "store_id": "STORE_002",
+    "store_name": "Albertsons",
+    "chain_name": "Albertsons",
+    "chain_tier": "Premium",
+    "address": {
+      "street": "2885 E Desert Inn Rd",
+      "city": "Las Vegas",
+      "state": "NV",
+      "zip_code": "89169",
+      "coordinates": {
+        "lat": 36.13057155591498,
+        "lon": -115.11467998589093
+      }
+    },
+    "phone": "702-998-5497",
+    "hours": {
+      "monday": "6:00 AM - 11:00 PM",
+      "tuesday": "6:00 AM - 11:00 PM",
+      "wednesday": "6:00 AM - 11:00 PM",
+      "thursday": "6:00 AM - 11:00 PM",
+      "friday": "6:00 AM - 12:00 AM",
+      "saturday": "6:00 AM - 12:00 AM",
+      "sunday": "7:00 AM - 10:00 PM"
+    },
+    "specialties": [
+      "Organic foods",
+      "Bulk items",
+      "Meat department",
+      "Pharmacy"
+    ]
+  },
+  {
+    "store_id": "STORE_003",
+    "store_name": "Walmart Supercenter",
+    "chain_name": "Walmart",
+    "chain_tier": "Discount",
+    "address": {
+      "street": "4505 W Charleston Blvd",
+      "city": "Las Vegas",
+      "state": "NV",
+      "zip_code": "89102",
+      "coordinates": {
+        "lat": 36.1525884510341,
+        "lon": -115.20589902425715
+      }
+    },
+    "phone": "702-338-9853",
+    "hours": {
+      "monday": "6:00 AM - 11:00 PM",
+      "tuesday": "6:00 AM - 11:00 PM",
+      "wednesday": "6:00 AM - 11:00 PM",
+      "thursday": "6:00 AM - 11:00 PM",
+      "friday": "6:00 AM - 12:00 AM",
+      "saturday": "6:00 AM - 12:00 AM",
+      "sunday": "7:00 AM - 10:00 PM"
+    },
+    "specialties": [
+      "Fresh produce",
+      "Pharmacy",
+      "Floral",
+      "Meat department"
+    ]
+  },
+  {
+    "store_id": "STORE_004",
+    "store_name": "Whole Foods Market",
+    "chain_name": "Amazon",
+    "chain_tier": "Premium",
+    "address": {
+      "street": "8855 W Charleston Blvd",
+      "city": "Las Vegas",
+      "state": "NV",
+      "zip_code": "89117",
+      "coordinates": {
+        "lat": 36.15121043795243,
+        "lon": -115.29945817683479
+      }
+    },
+    "phone": "702-506-5819",
+    "hours": {
+      "monday": "6:00 AM - 11:00 PM",
+      "tuesday": "6:00 AM - 11:00 PM",
+      "wednesday": "6:00 AM - 11:00 PM",
+      "thursday": "6:00 AM - 11:00 PM",
+      "friday": "6:00 AM - 12:00 AM",
+      "saturday": "6:00 AM - 12:00 AM",
+      "sunday": "7:00 AM - 10:00 PM"
+    },
+    "specialties": [
+      "Fresh produce",
+      "Organic foods"
+    ]
+  },
+  {
+    "store_id": "STORE_005",
+    "store_name": "Vons",
+    "chain_name": "Albertsons",
+    "chain_tier": "Premium",
+    "address": {
+      "street": "9120 W Sahara Ave",
+      "city": "Las Vegas",
+      "state": "NV",
+      "zip_code": "89117",
+      "coordinates": {
+        "lat": 36.13659775660839,
+        "lon": -115.29830372814773
+      }
+    },
+    "phone": "702-745-3056",
+    "hours": {
+      "monday": "6:00 AM - 11:00 PM",
+      "tuesday": "6:00 AM - 11:00 PM",
+      "wednesday": "6:00 AM - 11:00 PM",
+      "thursday": "6:00 AM - 11:00 PM",
+      "friday": "6:00 AM - 12:00 AM",
+      "saturday": "6:00 AM - 12:00 AM",
+      "sunday": "7:00 AM - 10:00 PM"
+    },
+    "specialties": [
+      "Seafood counter",
+      "Bulk items",
+      "Organic foods",
+      "Prepared foods"
+    ]
+  },
+  {
+    "store_id": "STORE_006",
+    "store_name": "Smith's Food & Drug",
+    "chain_name": "Kroger",
+    "chain_tier": "Premium",
+    "address": {
+      "street": "2211 N Rainbow Blvd",
+      "city": "Las Vegas",
+      "state": "NV",
+      "zip_code": "89108",
+      "coordinates": {
+        "lat": 36.1831724424519,
+        "lon": -115.2487777596719
+      }
+    },
+    "phone": "702-872-8974",
+    "hours": {
+      "monday": "6:00 AM - 11:00 PM",
+      "tuesday": "6:00 AM - 11:00 PM",
+      "wednesday": "6:00 AM - 11:00 PM",
+      "thursday": "6:00 AM - 11:00 PM",
+      "friday": "6:00 AM - 12:00 AM",
+      "saturday": "6:00 AM - 12:00 AM",
+      "sunday": "7:00 AM - 10:00 PM"
+    },
+    "specialties": [
+      "Organic foods",
+      "Fresh produce",
+      "Pharmacy",
+      "International cuisine"
+    ]
+  },
+  {
+    "store_id": "STORE_007",
+    "store_name": "WinCo Foods",
+    "chain_name": "WinCo",
+    "chain_tier": "Discount",
+    "address": {
+      "street": "7231 Arroyo Crossing Pkwy",
+      "city": "Las Vegas",
+      "state": "NV",
+      "zip_code": "89113",
+      "coordinates": {
+        "lat": 36.03832022034917,
+        "lon": -115.17343877253272
+      }
+    },
+    "phone": "702-411-4435",
+    "hours": {
+      "monday": "6:00 AM - 11:00 PM",
+      "tuesday": "6:00 AM - 11:00 PM",
+      "wednesday": "6:00 AM - 11:00 PM",
+      "thursday": "6:00 AM - 11:00 PM",
+      "friday": "6:00 AM - 12:00 AM",
+      "saturday": "6:00 AM - 12:00 AM",
+      "sunday": "7:00 AM - 10:00 PM"
+    },
+    "specialties": [
+      "Fresh produce",
+      "International cuisine",
+      "Bulk items",
+      "Meat department"
+    ]
+  },
+  {
+    "store_id": "STORE_008",
+    "store_name": "Fresh Market",
+    "chain_name": "Independent",
+    "chain_tier": "Premium",
+    "address": {
+      "street": "9620 S Eastern Ave",
+      "city": "Las Vegas",
+      "state": "NV",
+      "zip_code": "89123",
+      "coordinates": {
+        "lat": 36.04787050007988,
+        "lon": -115.12449066117081
+      }
+    },
+    "phone": "702-649-4460",
+    "hours": {
+      "monday": "6:00 AM - 11:00 PM",
+      "tuesday": "6:00 AM - 11:00 PM",
+      "wednesday": "6:00 AM - 11:00 PM",
+      "thursday": "6:00 AM - 11:00 PM",
+      "friday": "6:00 AM - 12:00 AM",
+      "saturday": "6:00 AM - 12:00 AM",
+      "sunday": "7:00 AM - 10:00 PM"
+    },
+    "specialties": [
+      "Floral",
+      "Meat department",
+      "Bakery",
+      "Prepared foods"
+    ]
+  },
+  {
+    "store_id": "STORE_009",
+    "store_name": "Lee's Sandwiches",
+    "chain_name": "Lee's",
+    "chain_tier": "Discount",
+    "address": {
+      "street": "2620 S Decatur Blvd",
+      "city": "Las Vegas",
+      "state": "NV",
+      "zip_code": "89102",
+      "coordinates": {
+        "lat": 36.1273768225841,
+        "lon": -115.21417429478208
+      }
+    },
+    "phone": "702-432-3636",
+    "hours": {
+      "monday": "6:00 AM - 11:00 PM",
+      "tuesday": "6:00 AM - 11:00 PM",
+      "wednesday": "6:00 AM - 11:00 PM",
+      "thursday": "6:00 AM - 11:00 PM",
+      "friday": "6:00 AM - 12:00 AM",
+      "saturday": "6:00 AM - 12:00 AM",
+      "sunday": "7:00 AM - 10:00 PM"
+    },
+    "specialties": [
+      "Prepared foods",
+      "Pharmacy"
+    ]
+  },
+  {
+    "store_id": "STORE_010",
+    "store_name": "Sprouts Farmers Market",
+    "chain_name": "Sprouts",
+    "chain_tier": "Premium",
+    "address": {
+      "street": "7530 W Lake Mead Blvd",
+      "city": "Las Vegas",
+      "state": "NV",
+      "zip_code": "89128",
+      "coordinates": {
+        "lat": 36.21994970074751,
+        "lon": -115.2607623613031
+      }
+    },
+    "phone": "702-611-4941",
+    "hours": {
+      "monday": "6:00 AM - 11:00 PM",
+      "tuesday": "6:00 AM - 11:00 PM",
+      "wednesday": "6:00 AM - 11:00 PM",
+      "thursday": "6:00 AM - 11:00 PM",
+      "friday": "6:00 AM - 12:00 AM",
+      "saturday": "6:00 AM - 12:00 AM",
+      "sunday": "7:00 AM - 10:00 PM"
+    },
+    "specialties": [
+      "Floral",
+      "Prepared foods",
+      "Bulk items"
+    ]
+  },
+  {
+    "store_id": "STORE_011",
+    "store_name": "Target",
+    "chain_name": "Target",
+    "chain_tier": "Mid-tier",
+    "address": {
+      "street": "8725 W Charleston Blvd",
+      "city": "Las Vegas",
+      "state": "NV",
+      "zip_code": "89117",
+      "coordinates": {
+        "lat": 36.15187551331802,
+        "lon": -115.2845631869066
+      }
+    },
+    "phone": "702-822-2038",
+    "hours": {
+      "monday": "6:00 AM - 11:00 PM",
+      "tuesday": "6:00 AM - 11:00 PM",
+      "wednesday": "6:00 AM - 11:00 PM",
+      "thursday": "6:00 AM - 11:00 PM",
+      "friday": "6:00 AM - 12:00 AM",
+      "saturday": "6:00 AM - 12:00 AM",
+      "sunday": "7:00 AM - 10:00 PM"
+    },
+    "specialties": [
+      "Meat department",
+      "Seafood counter",
+      "Bulk items"
+    ]
+  },
+  {
+    "store_id": "STORE_012",
+    "store_name": "Costco Wholesale",
+    "chain_name": "Costco",
+    "chain_tier": "Warehouse",
+    "address": {
+      "street": "801 S Pavilion Center Dr",
+      "city": "Las Vegas",
+      "state": "NV",
+      "zip_code": "89144",
+      "coordinates": {
+        "lat": 36.14001336217485,
+        "lon": -115.291482491384
+      }
+    },
+    "phone": "702-534-7266",
+    "hours": {
+      "monday": "6:00 AM - 11:00 PM",
+      "tuesday": "6:00 AM - 11:00 PM",
+      "wednesday": "6:00 AM - 11:00 PM",
+      "thursday": "6:00 AM - 11:00 PM",
+      "friday": "6:00 AM - 12:00 AM",
+      "saturday": "6:00 AM - 12:00 AM",
+      "sunday": "7:00 AM - 10:00 PM"
+    },
+    "specialties": [
+      "Floral",
+      "Fresh produce"
+    ]
+  },
+  {
+    "store_id": "STORE_013",
+    "store_name": "Sam's Club",
+    "chain_name": "Walmart",
+    "chain_tier": "Warehouse",
+    "address": {
+      "street": "4815 Boulder Hwy",
+      "city": "Las Vegas",
+      "state": "NV",
+      "zip_code": "89121",
+      "coordinates": {
+        "lat": 36.106977058067855,
+        "lon": -115.0593830805945
+      }
+    },
+    "phone": "702-267-3071",
+    "hours": {
+      "monday": "6:00 AM - 11:00 PM",
+      "tuesday": "6:00 AM - 11:00 PM",
+      "wednesday": "6:00 AM - 11:00 PM",
+      "thursday": "6:00 AM - 11:00 PM",
+      "friday": "6:00 AM - 12:00 AM",
+      "saturday": "6:00 AM - 12:00 AM",
+      "sunday": "7:00 AM - 10:00 PM"
+    },
+    "specialties": [
+      "Organic foods",
+      "Seafood counter"
+    ]
+  },
+  {
+    "store_id": "STORE_014",
+    "store_name": "Trader Joe's",
+    "chain_name": "Trader Joe's",
+    "chain_tier": "Premium",
+    "address": {
+      "street": "2716 N Green Valley Pkwy",
+      "city": "Las Vegas",
+      "state": "NV",
+      "zip_code": "89014",
+      "coordinates": {
+        "lat": 36.17975507602811,
+        "lon": -115.04007559828007
+      }
+    },
+    "phone": "702-611-5619",
+    "hours": {
+      "monday": "6:00 AM - 11:00 PM",
+      "tuesday": "6:00 AM - 11:00 PM",
+      "wednesday": "6:00 AM - 11:00 PM",
+      "thursday": "6:00 AM - 11:00 PM",
+      "friday": "6:00 AM - 12:00 AM",
+      "saturday": "6:00 AM - 12:00 AM",
+      "sunday": "7:00 AM - 10:00 PM"
+    },
+    "specialties": [
+      "Meat department",
+      "Fresh produce",
+      "Floral",
+      "Organic foods"
+    ]
+  },
+  {
+    "store_id": "STORE_015",
+    "store_name": "Food 4 Less",
+    "chain_name": "Kroger",
+    "chain_tier": "Discount",
+    "address": {
+      "street": "4855 Boulder Hwy",
+      "city": "Las Vegas",
+      "state": "NV",
+      "zip_code": "89121",
+      "coordinates": {
+        "lat": 36.10105303570318,
+        "lon": -115.06514784242408
+      }
+    },
+    "phone": "702-289-3134",
+    "hours": {
+      "monday": "6:00 AM - 11:00 PM",
+      "tuesday": "6:00 AM - 11:00 PM",
+      "wednesday": "6:00 AM - 11:00 PM",
+      "thursday": "6:00 AM - 11:00 PM",
+      "friday": "6:00 AM - 12:00 AM",
+      "saturday": "6:00 AM - 12:00 AM",
+      "sunday": "7:00 AM - 10:00 PM"
+    },
+    "specialties": [
+      "Pharmacy",
+      "Seafood counter"
+    ]
+  },
+  {
+    "store_id": "STORE_016",
+    "store_name": "Ranch Market",
+    "chain_name": "Independent",
+    "chain_tier": "Mid-tier",
+    "address": {
+      "street": "2901 Las Vegas Blvd S",
+      "city": "Las Vegas",
+      "state": "NV",
+      "zip_code": "89109",
+      "coordinates": {
+        "lat": 36.12715806493769,
+        "lon": -115.16682315120799
+      }
+    },
+    "phone": "702-569-4884",
+    "hours": {
+      "monday": "6:00 AM - 11:00 PM",
+      "tuesday": "6:00 AM - 11:00 PM",
+      "wednesday": "6:00 AM - 11:00 PM",
+      "thursday": "6:00 AM - 11:00 PM",
+      "friday": "6:00 AM - 12:00 AM",
+      "saturday": "6:00 AM - 12:00 AM",
+      "sunday": "7:00 AM - 10:00 PM"
+    },
+    "specialties": [
+      "Organic foods",
+      "Prepared foods"
+    ]
+  },
+  {
+    "store_id": "STORE_017",
+    "store_name": "International Marketplace",
+    "chain_name": "Independent",
+    "chain_tier": "Premium",
+    "address": {
+      "street": "5000 Spring Mountain Rd",
+      "city": "Las Vegas",
+      "state": "NV",
+      "zip_code": "89146",
+      "coordinates": {
+        "lat": 36.12865630360706,
+        "lon": -115.23141609213938
+      }
+    },
+    "phone": "702-966-8945",
+    "hours": {
+      "monday": "6:00 AM - 11:00 PM",
+      "tuesday": "6:00 AM - 11:00 PM",
+      "wednesday": "6:00 AM - 11:00 PM",
+      "thursday": "6:00 AM - 11:00 PM",
+      "friday": "6:00 AM - 12:00 AM",
+      "saturday": "6:00 AM - 12:00 AM",
+      "sunday": "7:00 AM - 10:00 PM"
+    },
+    "specialties": [
+      "Bakery",
+      "Seafood counter"
+    ]
+  },
+  {
+    "store_id": "STORE_018",
+    "store_name": "99 Ranch Market",
+    "chain_name": "99 Ranch",
+    "chain_tier": "Premium",
+    "address": {
+      "street": "4275 Spring Mountain Rd",
+      "city": "Las Vegas",
+      "state": "NV",
+      "zip_code": "89102",
+      "coordinates": {
+        "lat": 36.12628436435243,
+        "lon": -115.20689024871051
+      }
+    },
+    "phone": "702-266-1414",
+    "hours": {
+      "monday": "6:00 AM - 11:00 PM",
+      "tuesday": "6:00 AM - 11:00 PM",
+      "wednesday": "6:00 AM - 11:00 PM",
+      "thursday": "6:00 AM - 11:00 PM",
+      "friday": "6:00 AM - 12:00 AM",
+      "saturday": "6:00 AM - 12:00 AM",
+      "sunday": "7:00 AM - 10:00 PM"
+    },
+    "specialties": [
+      "Bulk items",
+      "Bakery",
+      "Seafood counter",
+      "Fresh produce"
+    ]
+  },
+  {
+    "store_id": "STORE_019",
+    "store_name": "Cardenas Markets",
+    "chain_name": "Cardenas",
+    "chain_tier": "Mid-tier",
+    "address": {
+      "street": "2710 N Las Vegas Blvd",
+      "city": "Las Vegas",
+      "state": "NV",
+      "zip_code": "89030",
+      "coordinates": {
+        "lat": 36.20583692062098,
+        "lon": -115.1726404989053
+      }
+    },
+    "phone": "702-771-2689",
+    "hours": {
+      "monday": "6:00 AM - 11:00 PM",
+      "tuesday": "6:00 AM - 11:00 PM",
+      "wednesday": "6:00 AM - 11:00 PM",
+      "thursday": "6:00 AM - 11:00 PM",
+      "friday": "6:00 AM - 12:00 AM",
+      "saturday": "6:00 AM - 12:00 AM",
+      "sunday": "7:00 AM - 10:00 PM"
+    },
+    "specialties": [
+      "Prepared foods",
+      "Organic foods",
+      "Bulk items",
+      "Floral"
+    ]
+  },
+  {
+    "store_id": "STORE_020",
+    "store_name": "Mariana's Supermarket",
+    "chain_name": "Independent",
+    "chain_tier": "Mid-tier",
+    "address": {
+      "street": "3045 N Las Vegas Blvd",
+      "city": "Las Vegas",
+      "state": "NV",
+      "zip_code": "89030",
+      "coordinates": {
+        "lat": 36.22983198903688,
+        "lon": -115.16615039661086
+      }
+    },
+    "phone": "702-720-4863",
+    "hours": {
+      "monday": "6:00 AM - 11:00 PM",
+      "tuesday": "6:00 AM - 11:00 PM",
+      "wednesday": "6:00 AM - 11:00 PM",
+      "thursday": "6:00 AM - 11:00 PM",
+      "friday": "6:00 AM - 12:00 AM",
+      "saturday": "6:00 AM - 12:00 AM",
+      "sunday": "7:00 AM - 10:00 PM"
+    },
+    "specialties": [
+      "Meat department",
+      "International cuisine"
+    ]
+  }
+]
