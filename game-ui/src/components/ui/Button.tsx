@@ -32,7 +32,7 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       primary: 'bg-blue-600 hover:bg-blue-700 text-white focus:ring-blue-500',
       secondary: 'bg-gray-200 hover:bg-gray-300 text-gray-900 focus:ring-gray-500',
       danger: 'bg-red-600 hover:bg-red-700 text-white focus:ring-red-500',
-      ghost: 'bg-transparent hover:bg-gray-100 text-gray-700 focus:ring-gray-500',
+      ghost: 'bg-transparent hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-200 focus:ring-gray-500',
       vegas: 'bg-gradient-to-r from-vegas-gold to-vegas-red hover:from-vegas-red hover:to-purple-600 text-white focus:ring-vegas-gold shadow-lg hover:shadow-xl',
       elastic: 'bg-gradient-to-r from-elastic-blue to-elastic-teal hover:from-elastic-teal hover:to-elastic-blue text-white focus:ring-elastic-blue shadow-lg hover:shadow-xl',
     };

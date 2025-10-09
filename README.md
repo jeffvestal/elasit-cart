@@ -2,6 +2,28 @@
 
 A modernized AI-powered grocery shopping challenge that showcases Elastic's Agent Builder capabilities at conferences and demos.
 
+## 🚀 Quick Deployment (New!)
+
+**Deploy to any cluster in 2 commands:**
+
+```bash
+# 1. Set your cluster credentials
+export KIBANA_URL=https://your-cluster.kb.cloud.es.io
+export KIBANA_API_KEY=your_api_key
+
+# 2. Deploy all tools and agents
+./deploy-canonical.sh --delete-existing
+
+# 3. Verify deployment
+./verify-deployment.sh
+```
+
+✅ **Deploys 8 tools + 5 agents** with production-tested definitions  
+📚 **[Read the full deployment guide →](./DEPLOYMENT.md)**  
+🔧 **[Script reference →](./SCRIPTS.md)**
+
+---
+
 ## 🏗️ Architecture Overview
 
 This system consists of four main components:

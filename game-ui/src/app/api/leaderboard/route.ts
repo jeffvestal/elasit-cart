@@ -141,7 +141,13 @@ export async function POST(request: NextRequest) {
       console.log(`❌ Score = 0: Over budget ($${totalPrice}/$${targetPrice})`);
       finalScore = 0;
     }
-    // Rule 3: Each bag must contain only one unique item type (already enforced by game logic)
+    // Rule 3: Maximum 5 items per bag
+    else if (items && items.some((item: any) => item.quantity > 5)) {
+      const violatingItems = items.filter((item: any) => item.quantity > 5);
+      console.log(`❌ Score = 0: Items exceed max per bag (5 max):`, violatingItems.map((i: any) => `${i.name}: ${i.quantity}`));
+      finalScore = 0;
+    }
+    // Rule 4: Each bag must contain only one unique item type (already enforced by game logic)
     // This is handled by the frontend constraint, but we validate uniqueItems count above
     else {
       // Valid game - calculate score based on proximity to target

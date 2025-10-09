@@ -18,7 +18,7 @@ export function ShoppingCart({ className = '' }: ShoppingCartProps) {
     session
   } = useGameStore();
 
-  const totalPrice = currentItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+  const totalPrice = currentItems.reduce((sum, item) => sum + (parseFloat(item.price || 0) * item.quantity), 0);
   const targetPrice = session?.targetPrice || 100;
   const remainingBudget = targetPrice - totalPrice;
   const isOverBudget = totalPrice > targetPrice;
@@ -26,7 +26,7 @@ export function ShoppingCart({ className = '' }: ShoppingCartProps) {
   const handleQuantityChange = (itemId: string, change: number) => {
     const item = currentItems.find(i => i.id === itemId);
     if (item) {
-      const newQuantity = Math.max(0, item.quantity + change);
+      const newQuantity = Math.max(0, Math.min(5, item.quantity + change));
       updateItemQuantity(itemId, newQuantity);
     }
   };
@@ -150,7 +150,7 @@ export function ShoppingCart({ className = '' }: ShoppingCartProps) {
                   <div className="flex items-center space-x-2">
                     <div className="text-right">
                       <div className="text-lg font-bold text-gray-900 dark:text-white">
-                        ${(bag.item!.price * bag.item!.quantity).toFixed(2)}
+                        ${(parseFloat(bag.item!.price || 0) * bag.item!.quantity).toFixed(2)}
                       </div>
                     </div>
                     <Button
@@ -183,7 +183,7 @@ export function ShoppingCart({ className = '' }: ShoppingCartProps) {
                   {/* Quantity and Price Description */}
                   <div className="flex items-center justify-between">
                     <div className="text-sm text-gray-600 dark:text-gray-400">
-                      {bag.item!.quantity}x @ ${bag.item!.price.toFixed(2)} each
+                      {bag.item!.quantity}x @ ${parseFloat(bag.item!.price || 0).toFixed(2)} each
                     </div>
                     
                     {/* Quantity Controls */}
@@ -204,6 +204,7 @@ export function ShoppingCart({ className = '' }: ShoppingCartProps) {
                         variant="ghost"
                         className="h-7 w-7 p-0"
                         onClick={() => handleQuantityChange(bag.item!.id, 1)}
+                        disabled={bag.item!.quantity >= 5}
                       >
                         <Plus className="h-3 w-3" />
                       </Button>

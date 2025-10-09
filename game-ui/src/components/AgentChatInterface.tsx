@@ -5,6 +5,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Send, Bot, User, Sparkles, MessageCircle, Loader2, ChevronDown, ChevronRight, Settings, Database } from 'lucide-react';
 import { useGameStore } from '@/store/gameStore';
 import { Button } from '@/components/ui/Button';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 interface ChatMessage {
   id: string;
@@ -19,6 +21,7 @@ interface ChatMessage {
     params?: any;
     results?: any;
   }>;
+  status?: 'thinking' | 'working' | 'typing' | 'complete';
 }
 
 interface AgentChatInterfaceProps {
@@ -33,6 +36,7 @@ export function AgentChatInterface({ className = '', onSuggestedItemsChange }: A
   const [isLoading, setIsLoading] = useState(false);
   const [expandedSteps, setExpandedSteps] = useState<Set<string>>(new Set());
   const [suggestedItems, setSuggestedItems] = useState<any[]>([]);
+  const [conversationId, setConversationId] = useState<string>('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -62,6 +66,14 @@ export function AgentChatInterface({ className = '', onSuggestedItemsChange }: A
     }
   }, [gameStarted, gameEnded]);
 
+  // Clear conversation when agent changes or game resets
+  useEffect(() => {
+    console.log('🔄 Agent or session changed - clearing conversation');
+    setConversationId('');
+    setMessages([]);
+    setSuggestedItems([]);
+  }, [selectedAgent?.id, session?.sessionId]);
+
   const handleSendMessage = async () => {
     if (!inputMessage.trim() || !selectedAgent || isLoading) return;
 
@@ -73,6 +85,7 @@ export function AgentChatInterface({ className = '', onSuggestedItemsChange }: A
     };
 
     setMessages(prev => [...prev, userMessage]);
+    const currentInput = inputMessage.trim();
     setInputMessage('');
     setIsLoading(true);
 
@@ -81,48 +94,21 @@ export function AgentChatInterface({ className = '', onSuggestedItemsChange }: A
     onSuggestedItemsChange?.([]);
 
     try {
-      const response = await fetch('/api/agent-chat', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          message: inputMessage.trim(),
-          agentId: selectedAgent.id,
-          sessionId: session?.sessionId,
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const apiResponse = await response.json();
-      console.log('✅ API Response:', apiResponse);
-
-      if (!apiResponse.success) {
-        throw new Error(apiResponse.error || 'Agent request failed');
-      }
-
-      // Extract steps from the response for display
-      const steps = apiResponse.metadata?.steps || [];
-      
+      // Create a placeholder assistant message for real-time updates
+      const assistantMessageId = (Date.now() + 1).toString();
       const assistantMessage: ChatMessage = {
-        id: (Date.now() + 1).toString(),
+        id: assistantMessageId,
         role: 'assistant',
-        content: apiResponse.response,
+        content: '',
         timestamp: new Date(),
-        items: apiResponse.items || [],
-        steps: steps
+        items: [],
+        steps: []
       };
 
       setMessages(prev => [...prev, assistantMessage]);
-      
-      // Update suggested items
-      if (apiResponse.items && apiResponse.items.length > 0) {
-        setSuggestedItems(apiResponse.items);
-        onSuggestedItemsChange?.(apiResponse.items);
-      }
+
+      // Handle real-time streaming
+      await handleStreamingResponse(currentInput, assistantMessageId);
 
     } catch (error) {
       console.error('❌ Chat error:', error);
@@ -138,6 +124,270 @@ export function AgentChatInterface({ className = '', onSuggestedItemsChange }: A
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleStreamingResponse = async (message: string, assistantMessageId: string) => {
+    const response = await fetch('/api/agent-chat', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        message: message,
+        agentId: selectedAgent?.id,
+        sessionId: session?.sessionId,
+        conversationId: conversationId || undefined, // Send conversation_id if we have one
+        streaming: true
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const reader = response.body?.getReader();
+    if (!reader) {
+      throw new Error('No response body reader available');
+    }
+
+    const decoder = new TextDecoder();
+    let buffer = '';
+    let currentSteps: any[] = [];
+    let currentMessage = '';
+    let finalItems: any[] = [];
+
+    try {
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        
+        // Process complete lines
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || '';
+        
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            const dataStr = line.substring(6);
+            try {
+              const streamEvent = JSON.parse(dataStr);
+              
+              // Handle different streaming events
+              switch (streamEvent.type) {
+                case 'reasoning':
+                  // Agent is thinking
+                  currentSteps = [...currentSteps, {
+                    type: 'reasoning',
+                    reasoning: streamEvent.data.reasoning
+                  }];
+                  updateAssistantMessage(assistantMessageId, currentMessage, currentSteps, finalItems, 'thinking');
+                  break;
+
+                case 'tool_call':
+                  // Agent is calling a tool
+                  const toolStep = {
+                    type: 'tool_call',
+                    tool_call_id: streamEvent.data.tool_call_id,
+                    tool_id: streamEvent.data.tool_id,
+                    params: streamEvent.data.params,
+                    results: []
+                  };
+                  currentSteps = [...currentSteps, toolStep];
+                  updateAssistantMessage(assistantMessageId, currentMessage, currentSteps, finalItems, 'working');
+                  break;
+
+                case 'tool_result':
+                  // Tool execution completed
+                  const toolCallId = streamEvent.data.tool_call_id;
+                  const stepIndex = currentSteps.findIndex(step => 
+                    step.type === 'tool_call' && step.tool_call_id === toolCallId
+                  );
+                  
+                  if (stepIndex !== -1) {
+                    currentSteps[stepIndex] = {
+                      ...currentSteps[stepIndex],
+                      results: streamEvent.data.results
+                    };
+                    
+                    // Extract items immediately when we get tool results
+                    const newItems = extractSuggestedItemsFromSteps(currentSteps);
+                    if (newItems.length > 0) {
+                      finalItems = newItems;
+                      setSuggestedItems(finalItems);
+                      onSuggestedItemsChange?.(finalItems);
+                    }
+                  }
+                  
+                  updateAssistantMessage(assistantMessageId, currentMessage, currentSteps, finalItems, 'working');
+                  break;
+
+                case 'message_chunk':
+                  // Agent is typing
+                  currentMessage += streamEvent.data.text_chunk;
+                  updateAssistantMessage(assistantMessageId, currentMessage, currentSteps, finalItems, 'typing');
+                  break;
+
+                case 'message_complete':
+                  // Final message complete
+                  currentMessage = streamEvent.data.message_content;
+                  updateAssistantMessage(assistantMessageId, currentMessage, currentSteps, finalItems, 'complete');
+                  break;
+
+                case 'completion':
+                  // Everything is done - use pre-extracted items from backend
+                  if (streamEvent.data.items && streamEvent.data.items.length > 0) {
+                    finalItems = streamEvent.data.items;
+                  } else if (streamEvent.data.steps) {
+                    // Fallback: extract from steps if no pre-extracted items
+                    finalItems = extractSuggestedItemsFromSteps(streamEvent.data.steps);
+                  } else {
+                    // Final fallback: extract from current steps
+                    finalItems = extractSuggestedItemsFromSteps(currentSteps);
+                  }
+                  
+                  // Store conversation_id for multi-turn conversations
+                  if (streamEvent.data.conversationId) {
+                    console.log(`💬 Storing conversation_id: ${streamEvent.data.conversationId}`);
+                    setConversationId(streamEvent.data.conversationId);
+                  }
+                  
+                  updateAssistantMessage(assistantMessageId, currentMessage, currentSteps, finalItems, 'complete');
+                  
+                  // Update suggested items
+                  if (finalItems.length > 0) {
+                    setSuggestedItems(finalItems);
+                    onSuggestedItemsChange?.(finalItems);
+                  }
+                  break;
+
+                case 'round_complete':
+                  // Handle round completion with full data
+                  if (streamEvent.data.round) {
+                    currentSteps = streamEvent.data.round.steps || currentSteps;
+                    currentMessage = streamEvent.data.round.response?.message || currentMessage;
+                    finalItems = extractSuggestedItemsFromSteps(currentSteps);
+                    updateAssistantMessage(assistantMessageId, currentMessage, currentSteps, finalItems, 'complete');
+                    
+                    // Update suggested items
+                    if (finalItems.length > 0) {
+                      setSuggestedItems(finalItems);
+                      onSuggestedItemsChange?.(finalItems);
+                    }
+                  }
+                  break;
+              }
+            } catch (e) {
+              // Skip malformed JSON
+              continue;
+            }
+          }
+        }
+      }
+    } finally {
+      reader.releaseLock();
+    }
+  };
+
+  const updateAssistantMessage = (
+    messageId: string, 
+    content: string, 
+    steps: any[], 
+    items: any[], 
+    status: 'thinking' | 'working' | 'typing' | 'complete'
+  ) => {
+    setMessages(prev => prev.map(msg => 
+      msg.id === messageId 
+        ? { 
+            ...msg, 
+            content, 
+            steps, 
+            items,
+            status // Add status for UI indicators
+          }
+        : msg
+    ));
+  };
+
+  const extractSuggestedItemsFromSteps = (steps: any[]): any[] => {
+    const suggestedItems: any[] = [];
+    
+    try {
+      const toolCalls = steps.filter(step => step.type === 'tool_call');
+      
+      for (const toolCall of toolCalls) {
+        const results = toolCall.results || [];
+        
+        for (const result of results) {
+          if (result.type === 'tabular_data' && result.data?.values) {
+            const tabularData = result.data;
+            
+            // Process each item from the tabular data
+            for (let index = 0; index < Math.min(tabularData.values.length, 5); index++) {
+              const item = tabularData.values[index];
+              
+              if (!item || !Array.isArray(item) || item.length === 0) {
+                continue;
+              }
+              
+              let bestPrice = 0;
+              let itemId = '';
+              let name = '';
+              let brand = '';
+              let category = '';
+              let quantity = 1;
+              
+              // Handle different data structures returned by different tools
+              if (item.length === 12) {
+                // New search_grocery_items structure
+                const [avgPrice, minPrice, maxPrice, storesAvailable, id, itemName, brandName, cat] = item;
+                bestPrice = parseFloat(avgPrice.toString()) || 0;
+                itemId = id || `item_${index}`;
+                name = itemName || `Product ${index + 1}`;
+                brand = brandName || 'Unknown Brand';
+                category = cat || 'Suggested';
+              } else if (item.length <= 11) {
+                // Budget/simple tool structure
+                [bestPrice, , , , itemId, name, brand, category] = item;
+              } else {
+                // Detailed tool structure (fallback)
+                bestPrice = parseFloat(item[0]?.toString()) || 0;
+                itemId = item[4] || `item_${index}`;
+                name = item[5] || `Product ${index + 1}`;
+                brand = item[6] || 'Unknown Brand';
+                category = item[7] || 'Suggested';
+              }
+              
+              // Skip items that are too cheap
+              if (bestPrice < 1) {
+                continue;
+              }
+              
+              // Check for duplicates by name
+              const isDuplicate = suggestedItems.some(existingItem => 
+                existingItem.name.toLowerCase() === name.toLowerCase()
+              );
+              
+              if (!isDuplicate) {
+                suggestedItems.push({
+                  id: itemId,
+                  name: name,
+                  brand: brand,
+                  category: category,
+                  price: bestPrice,
+                  quantity: quantity,
+                  unit: 'item'
+                });
+              }
+            }
+          }
+        }
+      }
+    } catch (error) {
+      console.error('❌ Error extracting suggested items:', error);
+    }
+    
+    return suggestedItems.slice(0, 5);
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -204,6 +454,29 @@ export function AgentChatInterface({ className = '', onSuggestedItemsChange }: A
                       <span className="text-xs font-medium text-gray-600 dark:text-gray-400 transition-colors">
                         {selectedAgent.name}
                       </span>
+                      {/* Real-time status indicator */}
+                      {message.status && message.status !== 'complete' && (
+                        <div className="flex items-center space-x-1">
+                          {message.status === 'thinking' && (
+                            <>
+                              <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
+                              <span className="text-xs text-blue-600 dark:text-blue-400 font-medium">Thinking...</span>
+                            </>
+                          )}
+                          {message.status === 'working' && (
+                            <>
+                              <div className="w-2 h-2 bg-orange-500 rounded-full animate-pulse" />
+                              <span className="text-xs text-orange-600 dark:text-orange-400 font-medium">Working...</span>
+                            </>
+                          )}
+                          {message.status === 'typing' && (
+                            <>
+                              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+                              <span className="text-xs text-green-600 dark:text-green-400 font-medium">Typing...</span>
+                            </>
+                          )}
+                        </div>
+                      )}
                     </div>
                   )}
                   
@@ -388,14 +661,29 @@ export function AgentChatInterface({ className = '', onSuggestedItemsChange }: A
                     </div>
                   )}
                   
-                  {/* Show the message content properly */}
-                  <div className="text-sm leading-relaxed whitespace-pre-wrap">
+                  {/* Show the message content with typing effect */}
+                  <div className="text-sm leading-relaxed prose prose-sm dark:prose-invert max-w-none">
                     {message.role === 'assistant' && message.items && message.items.length > 0 ? (
                       // If there are suggested items, show a simple message
                       `${selectedAgent.name} found some great options for you! Use the "Add" buttons below to add items to your cart.`
+                    ) : message.role === 'assistant' ? (
+                      // For assistant messages, render markdown
+                      <>
+                        <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                          {message.content}
+                        </ReactMarkdown>
+                        {message.status === 'typing' && (
+                          <span className="inline-block w-2 h-4 bg-gray-600 dark:bg-gray-300 ml-1 animate-pulse" style={{ animation: 'blink 1s infinite' }} />
+                        )}
+                      </>
                     ) : (
-                      // Otherwise show the full message content
-                      message.content
+                      // For user messages, show plain text
+                      <>
+                        {message.content}
+                        {message.status === 'typing' && (
+                          <span className="inline-block w-2 h-4 bg-gray-600 dark:bg-gray-300 ml-1 animate-pulse" style={{ animation: 'blink 1s infinite' }} />
+                        )}
+                      </>
                     )}
                   </div>
                   

@@ -58,6 +58,12 @@ export default function GameLayout() {
   const [showConfetti, setShowConfetti] = useState(false);
   const [gamePhase, setGamePhase] = useState<'login' | 'setup' | 'playing' | 'complete'>('login');
   const [suggestedItems, setSuggestedItems] = useState<any[]>([]);
+  
+  // Wrapper to log suggested items
+  const setSuggestedItemsWithLogging = (items: any[]) => {
+    console.log('🎯 Setting suggested items:', items);
+    setSuggestedItems(items);
+  };
   const [finalScore, setFinalScore] = useState<number | null>(null);
   const { width, height } = useWindowSize();
   const { theme, toggleTheme } = useTheme();
@@ -193,7 +199,7 @@ export default function GameLayout() {
     endGame();
   };
 
-  const totalPrice = currentItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+  const totalPrice = currentItems.reduce((sum, item) => sum + (parseFloat(item.price || 0) * item.quantity), 0);
   const targetPrice = session?.targetPrice || 100;
 
   if (gamePhase === 'login') {
@@ -393,7 +399,7 @@ export default function GameLayout() {
               </div>
 
               {/* Agent Selection */}
-              <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-6">
+              <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 p-6 transition-colors">
                 <div className="text-center mb-6">
                   {selectedAgent ? (
                     <div className="flex items-center justify-center space-x-4 mb-4">
@@ -401,17 +407,17 @@ export default function GameLayout() {
                         <span className="text-white text-2xl">{selectedAgent.avatar}</span>
                       </div>
                       <div className="text-left">
-                        <h3 className="text-xl font-bold text-gray-900">{selectedAgent.name}</h3>
-                        <p className="text-gray-600">{selectedAgent.description}</p>
+                        <h3 className="text-xl font-bold text-gray-900 dark:text-white transition-colors">{selectedAgent.name}</h3>
+                        <p className="text-gray-600 dark:text-gray-300 transition-colors">{selectedAgent.description}</p>
                       </div>
                     </div>
                   ) : (
                     <div className="mb-4">
-                      <div className="w-16 h-16 bg-gray-200 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                        <Bot className="h-8 w-8 text-gray-400" />
+                      <div className="w-16 h-16 bg-gray-200 dark:bg-gray-700 rounded-2xl flex items-center justify-center mx-auto mb-4 transition-colors">
+                        <Bot className="h-8 w-8 text-gray-400 dark:text-gray-500" />
                       </div>
-                      <h3 className="text-xl font-bold text-gray-900 mb-2">Choose Your Agent</h3>
-                      <p className="text-gray-600">Select an AI shopping expert to help you win!</p>
+                      <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2 transition-colors">Choose Your Agent</h3>
+                      <p className="text-gray-600 dark:text-gray-300 transition-colors">Select an AI shopping expert to help you win!</p>
                     </div>
                   )}
 
@@ -493,7 +499,7 @@ export default function GameLayout() {
 
                 <AgentChatInterface 
                   className="flex-1" 
-                  onSuggestedItemsChange={setSuggestedItems}
+                  onSuggestedItemsChange={setSuggestedItemsWithLogging}
                 />
 
                 {/* Suggested Items Display - More Compact */}
@@ -504,13 +510,15 @@ export default function GameLayout() {
                       <h3 className="text-sm font-semibold text-gray-900 dark:text-white transition-colors">Agent Suggestions:</h3>
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                      {suggestedItems.map((item, index) => (
+                      {suggestedItems.map((item, index) => {
+                        console.log(`🏷️ Displaying item ${index}:`, { name: item.name, price: item.price, type: typeof item.name });
+                        return (
                         <div key={index} className="flex items-center justify-between p-2 bg-white dark:bg-gray-800 rounded border border-gray-200 dark:border-gray-600 transition-colors">
                           <div className="flex-1 min-w-0">
                             <h4 className="font-medium text-sm text-gray-900 dark:text-white transition-colors truncate">
                               {item.quantity && item.quantity > 1 ? `${item.quantity}x ` : ''}{item.name}
                             </h4>
-                            <p className="text-xs text-elastic-blue font-semibold">${item.price.toFixed(2)}</p>
+                            <p className="text-xs text-elastic-blue font-semibold">${parseFloat(item.price || 0).toFixed(2)}</p>
                           </div>
                           <Button
                             size="sm"
@@ -542,7 +550,8 @@ export default function GameLayout() {
                             Add
                           </Button>
                         </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   </div>
                 )}
@@ -562,7 +571,8 @@ export default function GameLayout() {
                       const uniqueItems = new Set(currentItems.map(item => item.name)).size;
                       const isOverBudget = totalPrice > targetPrice;
                       const isWrongBagCount = uniqueItems !== 5;
-                      const isInvalid = isOverBudget || isWrongBagCount;
+                      const hasOverMaxItems = currentItems.some(item => item.quantity > 5);
+                      const isInvalid = isOverBudget || isWrongBagCount || hasOverMaxItems;
                       
                       if (isInvalid) {
                         return (
@@ -571,6 +581,7 @@ export default function GameLayout() {
                             <div className="text-xs text-red-500 space-y-1">
                               {isWrongBagCount && <div>• Need exactly 5 bags (currently {uniqueItems})</div>}
                               {isOverBudget && <div>• Over budget: ${totalPrice.toFixed(2)} > $100.00</div>}
+                              {hasOverMaxItems && <div>• Max 5 items per bag (some bags exceed limit)</div>}
                             </div>
                           </div>
                         );

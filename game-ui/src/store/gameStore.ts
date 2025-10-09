@@ -172,10 +172,16 @@ export const useGameStore = create<GameState>()(
         const existingItem = state.currentItems.find(i => i.name === item.name);
         
         if (existingItem) {
-          // Item already exists, just increase quantity
+          // Item already exists, check if adding would exceed max per bag
+          const newQuantity = existingItem.quantity + item.quantity;
+          if (newQuantity > 5) {
+            return { success: false, message: 'Maximum 5 items per bag!', isNewItem: false };
+          }
+          
+          // Increase quantity
           set({
             currentItems: state.currentItems.map(i =>
-              i.name === item.name ? { ...i, quantity: i.quantity + item.quantity } : i
+              i.name === item.name ? { ...i, quantity: newQuantity } : i
             )
           });
           return { success: true, message: 'Quantity updated', isNewItem: false };
@@ -185,6 +191,11 @@ export const useGameStore = create<GameState>()(
         if (state.currentItems.length >= 5) {
           // Cannot add more unique items - we have 5 bags already
           return { success: false, message: 'You already have 5 bags! Remove an item to add a new one.', isNewItem: true };
+        }
+        
+        // Check if initial quantity exceeds max
+        if (item.quantity > 5) {
+          return { success: false, message: 'Maximum 5 items per bag!', isNewItem: true };
         }
         
         // Add new unique item (new bag)

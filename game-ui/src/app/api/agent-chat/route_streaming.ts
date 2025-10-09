@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 // Agent chat endpoint to proxy requests to Agent Builder with streaming support
 export async function POST(request: NextRequest) {
   try {
-    const { message, agentId, sessionId, conversationId, streaming = true } = await request.json();
+    const { message, agentId, sessionId, streaming = true } = await request.json();
 
     // Validate required fields
     if (!message || !agentId) {
@@ -52,24 +52,16 @@ export async function POST(request: NextRequest) {
 
     const agentBuilderUrl = `${kibanaUrl.replace(/\/$/, '')}${endpoint}`;
     
-    const chatPayload: any = {
+    const chatPayload = {
       input: message,
       agent_id: backendAgentId
     };
 
-    // Include conversation_id if provided (for multi-turn conversations)
-    if (conversationId) {
-      chatPayload.conversation_id = conversationId;
-      console.log(`🔗 Continuing conversation: ${conversationId}`);
-    } else {
-      console.log(`🆕 Starting new conversation`);
-    }
-
     console.log(`📡 Calling Agent Builder API: ${agentBuilderUrl}`);
 
     if (streaming) {
-      // Handle streaming response with real-time streaming to frontend
-      return handleRealTimeStreamingResponse(agentBuilderUrl, chatPayload, kibanaApiKey, agentId, sessionId);
+      // Handle streaming response
+      return handleStreamingResponse(agentBuilderUrl, chatPayload, kibanaApiKey, agentId, sessionId);
     } else {
       // Handle non-streaming response (existing logic)
       return handleNonStreamingResponse(agentBuilderUrl, chatPayload, kibanaApiKey, agentId, sessionId);
@@ -87,150 +79,6 @@ export async function POST(request: NextRequest) {
       sessionId: request.body?.sessionId || `error_${Date.now()}`
     });
   }
-}
-
-async function handleRealTimeStreamingResponse(
-  agentBuilderUrl: string, 
-  chatPayload: any, 
-  kibanaApiKey: string, 
-  agentId: string, 
-  sessionId?: string
-) {
-  const response = await fetch(agentBuilderUrl, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `ApiKey ${kibanaApiKey}`,
-      'kbn-xsrf': 'true',
-    },
-    body: JSON.stringify(chatPayload),
-  });
-
-  if (!response.ok) {
-    console.error(`❌ Agent Builder API error: ${response.status} ${response.statusText}`);
-    const errorText = await response.text();
-    console.error(`❌ Error details: ${errorText}`);
-    throw new Error(`Agent Builder API request failed: ${response.status}`);
-  }
-
-  // Create a ReadableStream that forwards the agent's streaming response to the frontend
-  const stream = new ReadableStream({
-    async start(controller) {
-      const reader = response.body?.getReader();
-      if (!reader) {
-        controller.error(new Error('No response body reader available'));
-        return;
-      }
-
-      const decoder = new TextDecoder();
-      let buffer = '';
-      let steps: any[] = [];
-      let conversationId = '';
-      let currentEventType = '';
-
-      try {
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-
-          buffer += decoder.decode(value, { stream: true });
-          
-          // Process complete lines
-          const lines = buffer.split('\n');
-          buffer = lines.pop() || '';
-          
-          for (const line of lines) {
-            if (line.startsWith('event: ')) {
-              currentEventType = line.substring(7);
-              continue;
-            } else if (line.startsWith('data: ')) {
-              const dataStr = line.substring(6);
-              try {
-                const data = JSON.parse(dataStr);
-                
-                // Create a streaming event for the frontend
-                const streamEvent = {
-                  type: currentEventType,
-                  data: data.data,
-                  timestamp: new Date().toISOString()
-                };
-
-                // Handle different event types
-                if (data.data?.conversation_id) {
-                  conversationId = data.data.conversation_id;
-                } else if (data.data?.reasoning) {
-                  steps.push({
-                    type: 'reasoning',
-                    reasoning: data.data.reasoning
-                  });
-                } else if (data.data?.tool_call_id) {
-                  // Find existing step or create new one
-                  let existingStep = steps.find(s => s.tool_call_id === data.data.tool_call_id);
-                  if (!existingStep) {
-                    existingStep = {
-                      type: 'tool_call',
-                      tool_call_id: data.data.tool_call_id,
-                      tool_id: data.data.tool_id,
-                      params: data.data.params,
-                      results: []
-                    };
-                    steps.push(existingStep);
-                  }
-                  // Add results if they exist
-                  if (data.data.results) {
-                    existingStep.results = data.data.results;
-                  }
-                }
-
-                // Send the event to frontend
-                const eventData = `data: ${JSON.stringify(streamEvent)}\n\n`;
-                controller.enqueue(new TextEncoder().encode(eventData));
-                
-              } catch (e) {
-                // Skip malformed JSON
-                continue;
-              }
-            }
-          }
-        }
-
-        // Send final completion event with all collected data and extracted items
-        const extractedItems = extractSuggestedItemsFromAgentResponse({ steps });
-        
-        const completionEvent = {
-          type: 'completion',
-          data: {
-            steps,
-            conversationId,
-            agentId,
-            sessionId: conversationId || sessionId,
-            items: extractedItems
-          },
-          timestamp: new Date().toISOString()
-        };
-
-        const finalEventData = `data: ${JSON.stringify(completionEvent)}\n\n`;
-        controller.enqueue(new TextEncoder().encode(finalEventData));
-        
-      } catch (error) {
-        console.error('❌ Streaming error:', error);
-        controller.error(error);
-      } finally {
-        reader.releaseLock();
-        controller.close();
-      }
-    }
-  });
-
-  return new Response(stream, {
-    headers: {
-      'Content-Type': 'text/event-stream',
-      'Cache-Control': 'no-cache',
-      'Connection': 'keep-alive',
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Headers': 'Content-Type',
-    },
-  });
 }
 
 async function handleStreamingResponse(
@@ -466,55 +314,19 @@ function extractSuggestedItemsFromAgentResponse(agentResponse: any): any[] {
     const toolCalls = steps.filter((step: any) => step.type === 'tool_call');
     
     for (const toolCall of toolCalls) {
-      console.log(`🔧 Processing tool: ${toolCall.tool_id}`);
-      
-      // Skip platform.core.search results as they don't have proper grocery data structure
-      if (toolCall.tool_id === 'platform.core.search') {
-        console.log('⚠️ Skipping platform.core.search results - using specialized grocery tools only');
-        continue;
-      }
-      
       const results = toolCall.results || [];
       
       for (const result of results) {
-        // Skip query results - only process tabular_data
-        if (result.type === 'query') {
-          console.log(`⏭️ Skipping query result`);
-          continue;
-        }
-        
         if (result.type === 'tabular_data' && result.data?.values) {
           const tabularData = result.data;
-          const columns = tabularData.columns || [];
-          const columnNames = columns.map((c: any) => c.name);
           
-          console.log(`📊 Tabular data: ${tabularData.values.length} rows, columns:`, columnNames);
-          
-          // Create a column index map for easy lookup
-          const colIndex: { [key: string]: number } = {};
-          columnNames.forEach((name: string, index: number) => {
-            colIndex[name] = index;
-          });
-          
-          // Process each item from the tabular data (increase limit to compensate for streaming issues)
-          for (let index = 0; index < Math.min(tabularData.values.length, 8); index++) {
+          // Process each item from the tabular data
+          for (let index = 0; index < Math.min(tabularData.values.length, 5); index++) {
             const item = tabularData.values[index];
             
             if (!item || !Array.isArray(item) || item.length === 0) {
               continue;
             }
-            
-            console.log(`🔍 Processing item ${index}:`, { 
-              name: item[colIndex['name']], 
-              item_id: item[colIndex['item_id']],
-              price_fields: {
-                avg_price: item[colIndex['avg_price']],
-                min_price: item[colIndex['min_price']],
-                best_price: item[colIndex['best_price']],
-                final_price: item[colIndex['final_price']],
-                current_price: item[colIndex['current_price']]
-              }
-            });
             
             let bestPrice = 0;
             let itemId = '';
@@ -523,36 +335,29 @@ function extractSuggestedItemsFromAgentResponse(agentResponse: any): any[] {
             let category = '';
             let quantity = 1;
             
-            // Parse by column names (not index positions)
-            itemId = item[colIndex['item_id']] || `item_${index}`;
-            name = item[colIndex['name']] || `Product ${index + 1}`;
-            brand = item[colIndex['brand']] || 'Unknown Brand';
-            category = item[colIndex['category']] || 'Suggested';
-            
-            // Try to get price from various possible columns
-            if (colIndex['avg_price'] !== undefined && item[colIndex['avg_price']] != null) {
-              bestPrice = parseFloat(item[colIndex['avg_price']].toString()) || 0;
-            } else if (colIndex['min_price'] !== undefined && item[colIndex['min_price']] != null) {
-              bestPrice = parseFloat(item[colIndex['min_price']].toString()) || 0;
-            } else if (colIndex['best_price'] !== undefined && item[colIndex['best_price']] != null) {
-              bestPrice = parseFloat(item[colIndex['best_price']].toString()) || 0;
-            } else if (colIndex['final_price'] !== undefined && item[colIndex['final_price']] != null) {
-              bestPrice = parseFloat(item[colIndex['final_price']].toString()) || 0;
-            } else if (colIndex['current_price'] !== undefined && item[colIndex['current_price']] != null) {
-              bestPrice = parseFloat(item[colIndex['current_price']].toString()) || 0;
+            // Handle different data structures returned by different tools
+            if (item.length === 12) {
+              // New search_grocery_items structure: [avg_price, min_price, max_price, stores_available, item_id, name, brand, category, unit_size, organic, gluten_free, vegan]
+              const [avgPrice, minPrice, maxPrice, storesAvailable, id, itemName, brandName, cat] = item;
+              bestPrice = parseFloat(avgPrice.toString()) || 0;
+              itemId = id || `item_${index}`;
+              name = itemName || `Product ${index + 1}`;
+              brand = brandName || 'Unknown Brand';
+              category = cat || 'Suggested';
+            } else if (item.length <= 11) {
+              // Budget/simple tool structure: [best_price, avg_price, stores_count, max_discount_score, item_id, name, brand, category, unit_size, organic, value_score]
+              [bestPrice, , , , itemId, name, brand, category] = item;
+            } else {
+              // Detailed tool structure (fallback for other tools)
+              bestPrice = parseFloat(item[0]?.toString()) || 0;
+              itemId = item[4] || `item_${index}`;
+              name = item[5] || `Product ${index + 1}`;
+              brand = item[6] || 'Unknown Brand';
+              category = item[7] || 'Suggested';
             }
             
-            console.log(`✅ Parsed item: name="${name}", price=$${bestPrice}, id=${itemId}`);
-            
-            // Skip items with invalid/missing data only
-            if (bestPrice <= 0) {
-              console.log(`⚠️ Skipping item with invalid price: ${name} - $${bestPrice}`);
-              continue;
-            }
-            
-            // Skip items with no proper name
-            if (!name || name === 'N/A' || name.trim() === '') {
-              console.log(`⚠️ Skipping item with no name: price $${bestPrice}`);
+            // Skip items that are too cheap (likely data errors)
+            if (bestPrice < 1) {
               continue;
             }
             
