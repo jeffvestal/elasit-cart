@@ -663,11 +663,8 @@ export function AgentChatInterface({ className = '', onSuggestedItemsChange }: A
                   
                   {/* Show the message content with typing effect */}
                   <div className="text-sm leading-relaxed prose prose-sm dark:prose-invert max-w-none">
-                    {message.role === 'assistant' && message.items && message.items.length > 0 ? (
-                      // If there are suggested items, show a simple message
-                      `${selectedAgent.name} found some great options for you! Use the "Add" buttons below to add items to your cart.`
-                    ) : message.role === 'assistant' ? (
-                      // For assistant messages, render markdown
+                    {message.role === 'assistant' ? (
+                      // Always render full markdown for assistant messages
                       <>
                         <ReactMarkdown remarkPlugins={[remarkGfm]}>
                           {message.content}

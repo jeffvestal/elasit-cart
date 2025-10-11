@@ -529,17 +529,17 @@ function extractSuggestedItemsFromAgentResponse(agentResponse: any): any[] {
             brand = item[colIndex['brand']] || 'Unknown Brand';
             category = item[colIndex['category']] || 'Suggested';
             
-            // Try to get price from various possible columns
-            if (colIndex['avg_price'] !== undefined && item[colIndex['avg_price']] != null) {
-              bestPrice = parseFloat(item[colIndex['avg_price']].toString()) || 0;
+            // Try to get price from various possible columns (prioritize best_price for budget tools)
+            if (colIndex['best_price'] !== undefined && item[colIndex['best_price']] != null) {
+              bestPrice = parseFloat(item[colIndex['best_price']].toString()) || 0;
             } else if (colIndex['min_price'] !== undefined && item[colIndex['min_price']] != null) {
               bestPrice = parseFloat(item[colIndex['min_price']].toString()) || 0;
-            } else if (colIndex['best_price'] !== undefined && item[colIndex['best_price']] != null) {
-              bestPrice = parseFloat(item[colIndex['best_price']].toString()) || 0;
             } else if (colIndex['final_price'] !== undefined && item[colIndex['final_price']] != null) {
               bestPrice = parseFloat(item[colIndex['final_price']].toString()) || 0;
             } else if (colIndex['current_price'] !== undefined && item[colIndex['current_price']] != null) {
               bestPrice = parseFloat(item[colIndex['current_price']].toString()) || 0;
+            } else if (colIndex['avg_price'] !== undefined && item[colIndex['avg_price']] != null) {
+              bestPrice = parseFloat(item[colIndex['avg_price']].toString()) || 0;
             }
             
             console.log(`✅ Parsed item: name="${name}", price=$${bestPrice}, id=${itemId}`);
